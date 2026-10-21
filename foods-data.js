@@ -255,7 +255,7 @@ window.FOOD_PHOTOS = {
   "124": { id: "1760108273033-0d789ef53d70", by: "Anastasiya Badun", page: "https://unsplash.com/photos/a-close-up-view-of-many-king-oyster-mushrooms-4neQmf4qvxc" }, // 새송이
   "119": { id: "1761669411746-8f401c29e9a6", by: "Amandine VEYRON", page: "https://unsplash.com/photos/red-and-black-chili-peppers-growing-on-a-plant-HmpIY5MJ2KE", approx: true }, // 고춧잎
   "118": { id: "1709229851054-a09c8f7bd7e3", by: "Junior Bazzo", page: "https://unsplash.com/photos/a-pile-of-black-beans-sitting-on-top-of-a-table-8sBDLt02quo", approx: true }, // 검은콩
-  "107": { id: "1615484477778-ca3b77940c25", by: "Mockup Graphics", page: "https://unsplash.com/photos/pear-with-yellow-and-red-skin-haSJEJYzl5A", approx: true }, // 배
+  "107": { id: "1696650501020-d724b938726f", by: "Jason Leung", page: "https://unsplash.com/photos/a-wooden-box-filled-with-lots-of-yellow-fruit-Sj94LPF8rN8", approx: true }, // 배 (둥근 아시아 배와 비슷한 사진. 한국산이라고 표시된 무료 사진은 없었다)
   "100": { id: "1791321829210-d94ccbc63b8f", by: "Zoshua Colah", page: "https://unsplash.com/photos/lotus-root-dish-with-chopsticks-6tkZ_SwjPuA" }, // 연근
   "39": { id: "1543831113-c823c4a606b6", by: "Nishant Dwivedi", page: "https://unsplash.com/photos/photo-of-mung-beans-ZAKBHmlINmE" }, // 녹두
   "142": { id: "1543208541-0961a29a8c3d", by: "Peter F", page: "https://unsplash.com/photos/assorted-seed-lot-fZ7-IAReeSo", approx: true }, // 잣
