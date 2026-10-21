@@ -105,6 +105,14 @@ header.top p { margin: 0; color: var(--muted); }
 .sec .content p { margin: 0 0 8px; font-size: .96rem; }
 .sec .content p b { font-weight: 700; }
 .sec .none { color: var(--muted); font-size: .92rem; margin: 0; }
+.apibox { width: min(1040px, calc(100% - 32px)); margin: 24px auto 0; padding: 14px 18px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; font-size: .92rem; }
+.apibox h2 { margin: 0 0 6px; font-size: 1.1rem; }
+.apibox h3 { margin: 12px 0 4px; font-size: .98rem; color: var(--primary); }
+.apibox ul, .apibox ol { margin: 0; padding-left: 1.2em; }
+.apibox li { margin-bottom: 4px; overflow-wrap: anywhere; }
+.apibox code { font-family: ui-monospace, Consolas, monospace; font-size: .82rem; background: var(--soft); padding: 1px 5px; border-radius: 6px; }
+.apibox .hint { margin: 6px 0 0; font-size: .82rem; color: var(--muted); }
+.retry { margin-left: 8px; min-height: 36px; padding: 0 12px; border: 1px solid var(--primary); border-radius: 10px; background: transparent; color: var(--primary); font: inherit; cursor: pointer; }
 .keybox { display: grid; gap: 8px; margin: 12px 0; padding: 14px 16px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; }
 .keybox h3 { margin: 0; font-size: 1.05rem; }
 .keybox label { font-size: .92rem; color: var(--muted); }

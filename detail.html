@@ -37,8 +37,10 @@
     <section class="sec" data-field="research"><h2>관련 연구</h2><div class="content"></div></section>
   </div>
 
+  <div id="apibox-slot"></div>
+
   <footer>
-    데이터: 공공데이터포털 농촌진흥청 이달의 농식품
+    데이터 출처: 공공데이터포털 농촌진흥청 이달의 농식품 · 사진: Unsplash
     <span id="keyclear" hidden> · <button type="button" class="linkbtn">이 탭에 저장된 인증키 지우기</button></span>
   </footer>
 
@@ -164,7 +166,12 @@
             cache.set(r.sn, data);
             if (openSn === r.sn) renderRecipe(panel, data);
           } catch (e) {
-            if (openSn === r.sn) panel.replaceChildren(el("p", `레시피를 불러오지 못했습니다: ${e.message}`, "err"));
+            if (openSn === r.sn) {
+              const again = el("button", "다시 시도", "retry");
+              again.type = "button";
+              again.addEventListener("click", () => { openSn = null; btn.click(); }); // 이 요리만 다시 부른다
+              panel.replaceChildren(el("p", `레시피를 불러오지 못했습니다: ${e.message}`, "err"), again);
+            }
           }
           btn.disabled = false;
         });
@@ -253,11 +260,16 @@
       } catch (e) {
         if (!$name.textContent || $name.textContent === "불러오는 중…") $name.textContent = "정보를 불러오지 못했습니다";
         $status.textContent = e.message;
+        const again = el("button", "다시 시도", "retry");
+        again.type = "button";
+        again.addEventListener("click", () => loadDetail());
+        $status.append(again);
         for (const box of Object.values(sections)) box.replaceChildren(el("p", "제공된 정보가 없습니다.", "none"));
         if (!keyFromConfig()) { slot.append(keyPanel(() => loadDetail(), `불러오지 못했어요: ${e.message}`)); }
       }
     }
     init();
+    document.getElementById("apibox-slot").append(apiBox("식재료 상세는 처음 열 때, 레시피는 추천 요리를 누를 때 각각 따로 불러와요. 한 곳이 실패해도 다른 곳은 그대로 보여요."));
 
     // 이 탭에 저장된 키가 있으면 지울 수 있게 한다
     const $clear = document.getElementById("keyclear");
