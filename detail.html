@@ -23,6 +23,7 @@
       </div>
     </section>
     <p class="status" id="status" role="status"></p>
+    <div id="keyslot"></div>
 
     <!-- 항목 제목은 미리 배치. data-field 의 이름과 같은 응답 값이 .content 에 들어간다 -->
     <section class="sec" data-field="pick"><h2>고르는 법·품종</h2><div class="content"></div></section>
@@ -36,7 +37,10 @@
     <section class="sec" data-field="research"><h2>관련 연구</h2><div class="content"></div></section>
   </div>
 
-  <footer>데이터: 공공데이터포털 농촌진흥청 이달의 농식품</footer>
+  <footer>
+    데이터: 공공데이터포털 농촌진흥청 이달의 농식품
+    <span id="keyclear" hidden> · <button type="button" class="linkbtn">이 탭에 저장된 인증키 지우기</button></span>
+  </footer>
 
   <script src="sample-data.js"></script>
   <script src="foods-data.js"></script>
@@ -224,20 +228,41 @@
         $status.textContent = "목록에서 식재료 카드를 눌러 들어와 주세요.";
         return;
       }
-      for (const box of Object.values(sections)) box.replaceChildren(el("p", "불러오는 중…", "loading"));
+      // 이름과 사진은 고정 데이터(foods-data.js)에 있어서 키 없이도 먼저 보여 준다
+      const known = Object.values(window.FOOD_DATA?.months || {}).flat().find((f) => f.sn === sn);
+      if (known) { $name.textContent = known.name; document.title = `${known.name} · 이달의 농식품`; fillPicture(known.name); }
+      loadDetail();
+    }
+
+    // 키가 없거나(처음 접속) 키가 틀리면 입력 칸을 보여 주고, 저장하면 다시 불러온다
+    async function loadDetail(message) {
+      const slot = document.getElementById("keyslot");
+      slot.replaceChildren();
       $status.textContent = "";
+      if (!hasKey()) {
+        for (const box of Object.values(sections)) box.replaceChildren(el("p", "인증키를 입력하면 볼 수 있어요.", "none"));
+        slot.append(keyPanel(() => loadDetail(), message));
+        return;
+      }
+      for (const box of Object.values(sections)) box.replaceChildren(el("p", "불러오는 중…", "loading"));
       try {
         const d = await fetchFoodDetail(sn);
         if (!d.name) throw new Error("해당 번호의 식재료가 없습니다");
         fill(d);
         fillPicture(d.name);
       } catch (e) {
-        $name.textContent = "정보를 불러오지 못했습니다";
+        if (!$name.textContent || $name.textContent === "불러오는 중…") $name.textContent = "정보를 불러오지 못했습니다";
         $status.textContent = e.message;
         for (const box of Object.values(sections)) box.replaceChildren(el("p", "제공된 정보가 없습니다.", "none"));
+        if (!keyFromConfig()) { slot.append(keyPanel(() => loadDetail(), `불러오지 못했어요: ${e.message}`)); }
       }
     }
     init();
+
+    // 이 탭에 저장된 키가 있으면 지울 수 있게 한다
+    const $clear = document.getElementById("keyclear");
+    if (readStoredKey()) $clear.hidden = false;
+    $clear.querySelector("button").addEventListener("click", () => { clearKey(); $clear.hidden = true; loadDetail(); });
   </script>
 </body>
 </html>

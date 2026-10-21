@@ -52,9 +52,51 @@ function safeImg(src, { alt = "", iconName = "leaf", ratio = "4/3", drop = false
 const CFG = window.APP_CONFIG || {};
 const API_BASE = String(CFG.API_BASE || "https://apis.data.go.kr/1390803/allbaroFoodMonth").replace(/\/$/, "");
 // Encoding 키(%XX 포함)는 그대로, Decoding 키(+ / = 포함)는 인코딩해서 붙인다
-const KEY_PARAM = CFG.SERVICE_KEY && !/여기에/.test(CFG.SERVICE_KEY)
-  ? (/%[0-9A-Fa-f]{2}/.test(CFG.SERVICE_KEY) ? CFG.SERVICE_KEY : encodeURIComponent(CFG.SERVICE_KEY))
-  : "";
+function normalizeKey(k) {
+  k = String(k || "").trim();
+  if (!k || /여기에/.test(k)) return "";
+  return /%[0-9A-Fa-f]{2}/.test(k) ? k : encodeURIComponent(k);
+}
+
+// 키는 두 곳에서 온다: ① 내 컴퓨터의 config.js ② 화면에서 직접 입력(GitHub Pages 등). 입력한 키는 이 탭의 sessionStorage 에만 둔다
+// (탭을 닫으면 사라진다. 저장소·서버로는 보내지 않고 공공데이터포털에만 전달한다)
+const KEY_STORE = "foodmonth:servicekey";
+function readStoredKey() { try { return sessionStorage.getItem(KEY_STORE) || ""; } catch { return ""; } }
+let KEY_PARAM = normalizeKey(CFG.SERVICE_KEY) || normalizeKey(readStoredKey());
+const hasKey = () => !!KEY_PARAM;
+const keyFromConfig = () => !!normalizeKey(CFG.SERVICE_KEY);
+function saveKey(k) {
+  const n = normalizeKey(k);
+  if (!n) return false;
+  try { sessionStorage.setItem(KEY_STORE, k.trim()); } catch {}
+  KEY_PARAM = n;
+  return true;
+}
+function clearKey() {
+  try { sessionStorage.removeItem(KEY_STORE); } catch {}
+  KEY_PARAM = normalizeKey(CFG.SERVICE_KEY); // config.js 의 키가 있으면 그대로 쓴다
+}
+
+// 인증키 입력 칸. 저장하면 onSaved 를 부른다. message 가 있으면 왜 다시 입력하는지 보여 준다.
+function keyPanel(onSaved, message) {
+  const box = el("form", null, "keybox");
+  box.append(el("h3", "인증키를 입력하면 상세 정보를 볼 수 있어요"));
+  if (message) box.append(el("p", message, "err"));
+  const label = el("label", "공공데이터포털 일반 인증키");
+  label.htmlFor = "keyinput";
+  const input = el("input");
+  input.type = "password"; input.id = "keyinput"; input.autocomplete = "off"; input.spellcheck = false;
+  input.placeholder = "발급받은 인증키(Encoding 또는 Decoding)";
+  const btn = el("button", "저장하고 불러오기");
+  btn.type = "submit";
+  box.append(label, input, btn,
+    el("p", "키는 이 탭에만 저장되고(탭을 닫으면 사라져요) 공공데이터포털에만 전달돼요. 저장소나 다른 서버로는 보내지 않아요. 다른 사람과 키를 공유하지 마세요.", "hint"));
+  box.addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (saveKey(input.value)) onSaved(); else input.focus();
+  });
+  return box;
+}
 
 const GAP_MS = 1500, RETRY_WAITS = [4000, 12000, 30000];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -62,7 +104,7 @@ let tail = Promise.resolve(), lastCallAt = 0;
 
 // 호출 제한(초당 요청 수)이 빡빡해서 한 줄로 세워 간격을 두고, 제한 오류(코드 23)면 기다렸다 재시도한다
 function callApi(operation, params) {
-  if (!KEY_PARAM) return Promise.reject(new Error("config.js 가 없거나 SERVICE_KEY 가 비어 있습니다 (config.example.js 참고)"));
+  if (!KEY_PARAM) return Promise.reject(new Error("인증키가 없습니다 (config.js 를 만들거나 화면에서 키를 입력하세요)"));
   const job = tail.then(() => run(operation, params));
   tail = job.catch(() => {});
   return job;
@@ -76,7 +118,7 @@ async function run(operation, params) {
     const qs = new URLSearchParams({ format: "json", ...params });
     const res = await fetch(`${API_BASE}/${operation}?serviceKey=${KEY_PARAM}&${qs}`);
     const text = await res.text();
-    if (/<returnReasonCode>23<\/returnReasonCode>/.test(text) && attempt < RETRY_WAITS.length) {
+    if (/returnReasonCode[^0-9]{1,6}23\b/.test(text) && attempt < RETRY_WAITS.length) { // XML·JSON 어느 쪽으로 와도
       await sleep(RETRY_WAITS[attempt]);
       continue;
     }
@@ -92,6 +134,8 @@ function parseResponse(text) {
     throw new Error(`${msg} (code ${code})`);
   }
   const root = JSON.parse(text);
+  const gw = root.OpenAPI_ServiceResponse?.cmmMsgHeader; // 게이트웨이 오류가 JSON 으로 올 때 (예: 등록되지 않은 서비스키)
+  if (gw) throw new Error(`${gw.returnAuthMsg || gw.errMsg || "게이트웨이 오류"} (code ${gw.returnReasonCode})`);
   const r = root.response || root;
   const code = String(r.header?.resultCode ?? "");
   if (code !== "200") throw new Error(`${r.header?.resultMsg || "응답 오류"} (code ${code})`);

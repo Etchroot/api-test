@@ -105,6 +105,14 @@ header.top p { margin: 0; color: var(--muted); }
 .sec .content p { margin: 0 0 8px; font-size: .96rem; }
 .sec .content p b { font-weight: 700; }
 .sec .none { color: var(--muted); font-size: .92rem; margin: 0; }
+.keybox { display: grid; gap: 8px; margin: 12px 0; padding: 14px 16px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; }
+.keybox h3 { margin: 0; font-size: 1.05rem; }
+.keybox label { font-size: .92rem; color: var(--muted); }
+.keybox input { min-height: 44px; padding: 0 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); color: var(--ink); font: inherit; }
+.keybox button { min-height: 44px; border: 0; border-radius: 12px; background: var(--primary); color: var(--on-primary); font: inherit; font-weight: 700; cursor: pointer; }
+.keybox .hint { margin: 0; font-size: .85rem; color: var(--muted); }
+.keybox .err { margin: 0; }
+.linkbtn { background: none; border: 0; padding: 0; color: inherit; text-decoration: underline; font: inherit; cursor: pointer; }
 .loading { text-align: center; color: var(--muted); padding: 8px 0; }
 details { font-size: .92rem; color: var(--muted); }
 summary { cursor: pointer; min-height: 32px; }
