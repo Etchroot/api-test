@@ -5,8 +5,8 @@
   --line: #bbf7d0; --soft: #dcfce7; --danger: #b91c1c;
   --spring: #dcfce7; --summer: #fef9c3; --fall: #ffedd5; --winter: #e0f2fe;
   --shadow: 0 6px 18px rgba(20, 83, 45, .14);
-  --font-serif: "Gaegu", "Malgun Gothic", cursive, sans-serif;
-  --font-sans: "Gaegu", "Malgun Gothic", cursive, sans-serif;
+  --font-serif: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -18,7 +18,7 @@
   }
 }
 * { box-sizing: border-box; }
-body { margin: 0; overflow-x: clip; background: var(--bg); color: var(--ink); font-family: var(--font-sans); font-size: 1.125rem; line-height: 1.6; } /* Gaegu 는 글자가 작게 보여 기본 크기를 조금 키웠다 */
+body { margin: 0; overflow-x: clip; background: var(--bg); color: var(--ink); font-family: var(--font-sans); line-height: 1.6; }
 h1, h2, .serif { font-family: var(--font-serif); }
 button { font: inherit; color: inherit; }
 a { color: inherit; }
