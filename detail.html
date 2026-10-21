@@ -100,7 +100,7 @@
     }
 
     function renderRecipe(panel, r) {
-      panel.replaceChildren(el("h3", r.name));
+      panel.replaceChildren(); // 요리 이름은 토글 버튼에 이미 보인다
       const n = r.nutrition || {};
       const facts = [["열량", n.kcal, "kcal"], ["탄수화물", n.carb, "g"], ["단백질", n.protein, "g"], ["지방", n.fat, "g"]]
         .filter(([, v]) => v).map(([k, v, u]) => `${k} ${Math.round(parseFloat(v))}${u}`);
@@ -134,50 +134,53 @@
       }
     }
 
-    // 추천 요리: 썸네일을 누르면 그 아래에 레시피(재료·조리 순서)가 펼쳐진다
+    // 추천 요리: 요리 이름 + 아래 화살표(▼) 토글 버튼. 누르면 그 아래에 레시피(재료·조리 순서)가 펼쳐지고, 다시 누르면 접힌다.
+    // 요리마다 따로 불러오고 따로 실패하므로, 한 요리가 실패해도 다른 요리는 그대로 열린다. 여러 개를 동시에 펼칠 수 있다.
     function fillRecipes(box, recipes) {
       box.replaceChildren();
       if (!recipes?.length) { box.append(el("p", "제공된 정보가 없습니다.", "none")); return; }
-      const grid = el("div", null, "recipes");
-      const panel = el("div", null, "recipe");
-      panel.hidden = true;
-      let openSn = null;
-      const cache = new Map();
-      for (const r of recipes) {
-        const btn = el("button");
+      const list = el("ul", null, "recipe-list");
+      recipes.forEach((r, idx) => {
+        const li = el("li", null, "recipe-item");
+        const btn = el("button", null, "recipe-toggle");
         btn.type = "button";
         btn.setAttribute("aria-expanded", "false");
-        btn.append(r.image ? safeImg(r.image, { iconName: "utensils", ratio: "1" }) : placeholder("utensils", "1", ""));
-        btn.append(el("span", r.name, "name-line"));
-        if (!r.sn) btn.disabled = true; // 기본 데이터의 요리 이름은 상세 레시피가 없다
-        btn.addEventListener("click", async () => {
-          if (openSn === r.sn) { // 같은 요리를 다시 누르면 접는다
-            panel.hidden = true; openSn = null; btn.setAttribute("aria-expanded", "false"); return;
-          }
-          grid.querySelectorAll("button").forEach((b) => b.setAttribute("aria-expanded", "false"));
-          openSn = r.sn;
-          btn.setAttribute("aria-expanded", "true");
-          panel.hidden = false;
-          if (cache.has(r.sn)) return renderRecipe(panel, cache.get(r.sn));
-          panel.replaceChildren(el("p", "레시피를 불러오는 중…"));
-          btn.disabled = true;
+        btn.setAttribute("aria-controls", `recipe-panel-${idx}`);
+        btn.append(el("span", r.name), icon("chevron"));
+        const panel = el("div", null, "recipe");
+        panel.id = `recipe-panel-${idx}`;
+        panel.hidden = true;
+        let data = null, loading = false;
+
+        async function load() {
+          if (loading) return;
+          loading = true;
+          btn.setAttribute("aria-busy", "true");
+          panel.replaceChildren(el("p", "레시피를 불러오는 중…", "loading"));
           try {
-            const data = await fetchRecipe(r.sn);
-            cache.set(r.sn, data);
-            if (openSn === r.sn) renderRecipe(panel, data);
+            data = await fetchRecipe(r.sn);
+            renderRecipe(panel, data);
           } catch (e) {
-            if (openSn === r.sn) {
-              const again = el("button", "다시 시도", "retry");
-              again.type = "button";
-              again.addEventListener("click", () => { openSn = null; btn.click(); }); // 이 요리만 다시 부른다
-              panel.replaceChildren(el("p", `레시피를 불러오지 못했습니다: ${e.message}`, "err"), again);
-            }
+            const again = el("button", "다시 시도", "retry");
+            again.type = "button";
+            again.addEventListener("click", load); // 이 요리만 다시 부른다
+            panel.replaceChildren(el("p", `레시피를 불러오지 못했습니다: ${e.message}`, "err"), again);
           }
-          btn.disabled = false;
+          loading = false;
+          btn.removeAttribute("aria-busy");
+        }
+
+        if (!r.sn) btn.disabled = true; // 기본 데이터의 요리 이름은 상세 레시피가 없다
+        btn.addEventListener("click", () => {
+          const wasOpen = btn.getAttribute("aria-expanded") === "true";
+          btn.setAttribute("aria-expanded", String(!wasOpen));
+          panel.hidden = wasOpen;
+          if (!wasOpen && !data) load();
         });
-        grid.append(btn);
-      }
-      box.append(grid, panel);
+        li.append(btn, panel);
+        list.append(li);
+      });
+      box.append(list);
     }
 
     function fillResearch(box, text) {

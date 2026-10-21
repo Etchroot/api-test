@@ -25,6 +25,7 @@ const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 // Lucide 스타일 SVG 아이콘 (이모지 대신 사용)
 const ICONS = {
   leaf: ["M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z", "M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"],
+  chevron: ["m6 9 6 6 6-6"], // 아래 화살표 (토글 버튼)
   utensils: ["M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2", "M7 2v20", "M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"],
 };
 function icon(name) {
