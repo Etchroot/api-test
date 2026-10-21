@@ -5,8 +5,8 @@
   --line: #bbf7d0; --soft: #dcfce7; --danger: #b91c1c;
   --spring: #dcfce7; --summer: #fef9c3; --fall: #ffedd5; --winter: #e0f2fe;
   --shadow: 0 6px 18px rgba(20, 83, 45, .14);
-  --font-serif: "Lora", "Noto Serif KR", "Batang", serif;
-  --font-sans: "Noto Sans KR", "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-serif: "Gaegu", "Malgun Gothic", cursive, sans-serif;
+  --font-sans: "Gaegu", "Malgun Gothic", cursive, sans-serif;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -18,7 +18,7 @@
   }
 }
 * { box-sizing: border-box; }
-body { margin: 0; overflow-x: clip; background: var(--bg); color: var(--ink); font-family: var(--font-sans); line-height: 1.6; }
+body { margin: 0; overflow-x: clip; background: var(--bg); color: var(--ink); font-family: var(--font-sans); font-size: 1.125rem; line-height: 1.6; } /* Gaegu 는 글자가 작게 보여 기본 크기를 조금 키웠다 */
 h1, h2, .serif { font-family: var(--font-serif); }
 button { font: inherit; color: inherit; }
 a { color: inherit; }
@@ -95,6 +95,8 @@ header.top p { margin: 0; color: var(--muted); }
 .hero { display: grid; gap: 16px; margin: 16px 0 8px; padding: 14px; border: 1px solid var(--line); border-radius: 24px 24px 28px 18px; background: var(--season-bg, var(--card)); }
 @media (min-width: 600px) { .hero { grid-template-columns: 240px 1fr; align-items: center; } }
 .hero .pic img, .hero .pic .ph { display: block; width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 16px; }
+.hero .credit { margin: 4px 2px 0; font-size: .72rem; color: var(--muted); text-align: right; }
+.hero .credit a { color: inherit; }
 .hero .crumb { margin: 0; font-size: .9rem; color: var(--accent); font-weight: 700; }
 .hero h1 { margin: 2px 0 4px; font-size: clamp(1.9rem, 6vw, 2.6rem); line-height: 1.2; }
 .hero .sub { margin: 0; color: var(--muted); font-size: .92rem; }

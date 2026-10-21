@@ -112,6 +112,14 @@ async function cached(key, ttl, fetcher) {
   return body;
 }
 
+// 식재료 사진 주소 (foods-data.js 의 FOOD_PHOTOS). 사진이 없으면 빈 문자열 → 잎 아이콘 자리표시가 나온다.
+function foodPhoto(sn) { return (window.FOOD_PHOTOS || {})[sn] || null; }
+function foodPhotoUrl(sn, w = 900) {
+  const p = foodPhoto(sn);
+  return p ? `https://images.unsplash.com/photo-${p.id}?fm=jpg&q=70&w=${w}&auto=format&fit=crop` : "";
+}
+
+// 월별 목록은 foods-data.js 에 고정해 두었다. 이 함수는 고정 목록이 없을 때만 API 로 받는다.
 const fetchFoodList = (month) => cached(`list:${month}`, TTL.list, async () => {
   const body = await callApi("foodList", { srchMonth: String(month), pageNo: "1", numOfRows: "50" });
   return { month, items: asArray(body?.items?.item).map((i) => ({ sn: i.fdmtSn, name: i.fdmtNm, image: i.fdmtImgUrl || "" })) };

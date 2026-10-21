@@ -6,7 +6,7 @@
   <title>식재료 상세 · 이달의 농식품</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;700&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@300;400;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -39,6 +39,7 @@
   <footer>데이터: 공공데이터포털 농촌진흥청 이달의 농식품</footer>
 
   <script src="sample-data.js"></script>
+  <script src="foods-data.js"></script>
   <script src="config.js"></script>
   <script src="common.js"></script>
   <script>
@@ -185,16 +186,18 @@
       fillResearch(sections.research, d.research);
     }
 
-    // 목록 API 응답에만 그림이 있다. 목록을 보고 온 경우 캐시에서 같은 번호의 그림을 찾는다.
-    async function fillPicture(name) {
+    // 식재료 사진은 foods-data.js 의 FOOD_PHOTOS 에서 일련번호로 찾는다 (없으면 잎 아이콘)
+    function fillPicture(name) {
       const pic = document.getElementById("d-pic");
       pic.replaceChildren(placeholder("leaf", "4/3", name));
-      if (!sn || !month) return;
-      try {
-        const list = await fetchFoodList(month);
-        const hit = list.items.find((i) => i.sn === sn);
-        if (hit?.image) pic.replaceChildren(safeImg(hit.image, { alt: name }));
-      } catch {}
+      const p = foodPhoto(sn);
+      if (!p) return;
+      pic.replaceChildren(safeImg(foodPhotoUrl(sn, 900), { alt: name }));
+      const credit = el("p", null, "credit");
+      const a = el("a", p.by);
+      a.href = p.page; a.target = "_blank"; a.rel = "noopener noreferrer";
+      credit.append(document.createTextNode("사진: "), a, document.createTextNode(" / Unsplash"));
+      pic.append(credit);
     }
 
     // 기본 데이터(sample-data.js)를 같은 화면 틀에 맞춰 넣는다

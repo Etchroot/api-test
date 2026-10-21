@@ -6,7 +6,7 @@
   <title>이달의 농식품</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;700&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@300;400;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -33,6 +33,7 @@
   <footer>데이터: 공공데이터포털 농촌진흥청 이달의 농식품 · API를 쓸 수 없을 때는 기본 데이터를 보여줍니다</footer>
 
   <script src="sample-data.js"></script>
+  <script src="foods-data.js"></script>
   <!-- 각자 로컬에 config.js 를 만든다 (config.example.js 참고). 없으면 404 가 나며 기본 데이터로 표시된다 -->
   <script src="config.js"></script>
   <script src="common.js"></script>
@@ -176,6 +177,13 @@
     async function loadMonth(m) {
       const have = months.get(m);
       if (have?.fromApi) return have;
+      // 목록은 foods-data.js 에 고정되어 있어 API 호출 없이 바로 나온다 (상세·레시피만 API)
+      const fixed = window.FOOD_DATA?.months?.[m];
+      if (fixed?.length) {
+        const v = { items: fixed.map((i) => ({ ...i, image: foodPhotoUrl(i.sn, 800) })), fromApi: true };
+        months.set(m, v);
+        return v;
+      }
       try {
         const d = await fetchFoodList(m);
         if (!d.items?.length) throw new Error("API 결과가 비어 있습니다");
