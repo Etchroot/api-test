@@ -125,15 +125,19 @@ header.top p { margin: 0; color: var(--muted); }
 details { font-size: .92rem; color: var(--muted); }
 summary { cursor: pointer; min-height: 32px; }
 
-.recipes { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
-.recipes button { margin: 0; padding: 0; border: 2px solid transparent; border-radius: 12px; background: none; font-size: .86rem; text-align: left; cursor: pointer; }
-.recipes button[aria-expanded="true"] { border-color: var(--primary); }
-.recipes button:disabled { opacity: .6; cursor: progress; }
-.recipes img, .recipes .ph { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 10px; background: var(--soft); }
-.recipes .ph svg { width: 1.6rem; height: 1.6rem; }
-.recipes .name-line { display: block; padding: 4px 2px 0; }
-.recipe { margin-top: 12px; padding: 12px 14px; background: var(--soft); border-radius: 12px; }
-.recipe h3 { margin: 0 0 4px; font-size: 1.05rem; }
+/* 추천 요리: 이름 + 아래 화살표(▼) 토글 버튼. 누르면 그 아래에 레시피가 펼쳐진다 */
+.recipe-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.recipe-toggle { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; min-height: 48px; padding: 8px 14px;
+                 border: 1px solid var(--line); border-radius: 12px; background: var(--bg); color: var(--ink); font: inherit; font-size: 1.05rem; text-align: left; cursor: pointer;
+                 transition: background-color .15s, border-color .15s; }
+.recipe-toggle:hover { border-color: var(--primary); background: var(--soft); }
+.recipe-toggle[aria-expanded="true"] { border-color: var(--primary); background: var(--soft); }
+.recipe-toggle svg { width: 1.3em; height: 1.3em; color: var(--primary); transition: transform .2s ease; }
+.recipe-toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
+.recipe-toggle:disabled { cursor: default; opacity: .75; }
+.recipe-toggle:disabled svg { display: none; }
+.recipe { margin-top: 8px; padding: 12px 14px; background: var(--soft); border-radius: 12px; }
+.recipe .loading { margin: 0; text-align: left; }
 .recipe h4 { margin: 12px 0 4px; font-size: .9rem; color: var(--primary); }
 .recipe ol { margin: 0; padding-left: 1.3em; font-size: .92rem; }
 .recipe li { margin-bottom: 4px; }
@@ -143,6 +147,6 @@ summary { cursor: pointer; min-height: 32px; }
 .recipe .photos img { height: 90px; width: auto; aspect-ratio: auto; border-radius: 6px; flex: none; }
 
 @media (prefers-reduced-motion: reduce) {
-  .wall, .fcard, .months button, .cal-bg { transition: none; }
+  .wall, .fcard, .months button, .cal-bg, .recipe-toggle, .recipe-toggle svg { transition: none; }
   .fcard:hover { transform: translateZ(calc(var(--z, 0) * 1px)); }
 }
