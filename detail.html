@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>식재료 상세 · 이달의 농식품</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;700&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- 상세 화면은 이 파일 하나다. 주소의 ?sn=번호 로 어떤 식재료인지 정하고, 아래 항목의 내용만 API 응답으로 채운다. -->
+  <div class="wrap">
+    <a class="back" id="back" href="index.html"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>목록으로</a>
+
+    <section class="hero" id="hero" aria-labelledby="d-name">
+      <div class="pic" id="d-pic"></div>
+      <div>
+        <p class="crumb" id="d-crumb"></p>
+        <h1 id="d-name">불러오는 중…</h1>
+        <p class="sub" id="d-sub"></p>
+      </div>
+    </section>
+    <p class="status" id="status" role="status"></p>
+
+    <!-- 항목 제목은 미리 배치. data-field 의 이름과 같은 응답 값이 .content 에 들어간다 -->
+    <section class="sec" data-field="pick"><h2>고르는 법·품종</h2><div class="content"></div></section>
+    <section class="sec" data-field="storage"><h2>보관·손질</h2><div class="content"></div></section>
+    <section class="sec" data-field="tip"><h2>손질·활용 팁</h2><div class="content"></div></section>
+    <section class="sec" data-field="eat"><h2>맛있게 먹는 법</h2><div class="content"></div></section>
+    <section class="sec" data-field="nutrition"><h2>영양·효능</h2><div class="content"></div></section>
+    <section class="sec" data-field="origin"><h2>유래·재배</h2><div class="content"></div></section>
+    <section class="sec" data-field="stats"><h2>생산 현황</h2><div class="content"></div></section>
+    <section class="sec" data-field="recipes"><h2>추천 요리</h2><div class="content"></div></section>
+    <section class="sec" data-field="research"><h2>관련 연구</h2><div class="content"></div></section>
+  </div>
+
+  <footer>데이터: 공공데이터포털 농촌진흥청 이달의 농식품</footer>
+
+  <script src="sample-data.js"></script>
+  <script src="config.js"></script>
+  <script src="common.js"></script>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const sn = params.get("sn") || "";
+    const sampleName = params.get("sample") || "";
+    const month = Number(params.get("m")) || 0;
+    const $status = document.getElementById("status");
+    const $name = document.getElementById("d-name");
+    const sections = Object.fromEntries([...document.querySelectorAll(".sec")].map((s) => [s.dataset.field, s.querySelector(".content")]));
+
+    if (month >= 1 && month <= 12) {
+      document.getElementById("back").href = `index.html?m=${month}`;
+      const [seasonCls, seasonName] = SEASONS[month];
+      document.getElementById("hero").classList.add(seasonCls);
+      document.getElementById("d-crumb").textContent = `${month}월 · ${seasonName} 제철`;
+    }
+
+    // "■ 제목- 내용 ■ 내용" 형태의 텍스트를 [{head, text}] 로 나눈다
+    function splitSections(text) {
+      return String(text || "").split("■").map((s) => s.trim()).filter(Boolean).map((s) => {
+        const m = s.match(/^([^-–:]{1,14}?)\s*[-–:]\s*([\s\S]+)$/);
+        return m ? { head: m[1].trim(), text: m[2].trim() } : { head: "", text: s };
+      });
+    }
+
+    function fillText(box, text) {
+      box.replaceChildren();
+      const secs = splitSections(text);
+      if (!secs.length) { box.append(el("p", "제공된 정보가 없습니다.", "none")); return; }
+      for (const s of secs) {
+        const p = el("p");
+        if (s.head) p.append(el("b", `${s.head}: `));
+        p.append(document.createTextNode(s.text));
+        box.append(p);
+      }
+    }
+
+    // "▶ 주재료 : 쇠고기(100g), 당근(30g)▶ 양념 : 소금(2작은술)" → [{head, text}]
+    function splitIngredients(text) {
+      return String(text || "").split("▶").map((s) => s.replace(/\s+/g, " ").trim()).filter(Boolean).map((s) => {
+        const m = s.match(/^([^:]{1,12}?)\s*:\s*([\s\S]+)$/);
+        return m ? { head: m[1].trim(), text: m[2].trim() } : { head: "", text: s };
+      });
+    }
+
+    // "1. 손질한다.2. 끓인다." → ["손질한다.", "끓인다."]  (소수점 "1.5컵" 은 뒤에 공백이 없어 나뉘지 않는다)
+    function splitSteps(text) {
+      const flat = String(text || "").replace(/\s+/g, " ").trim();
+      const steps = flat.match(/\d{1,2}\.\s[\s\S]*?(?=\d{1,2}\.\s|$)/g);
+      return steps ? steps.map((s) => s.replace(/^\d{1,2}\.\s/, "").trim()) : (flat ? [flat] : []);
+    }
+
+    function renderRecipe(panel, r) {
+      panel.replaceChildren(el("h3", r.name));
+      const n = r.nutrition || {};
+      const facts = [["열량", n.kcal, "kcal"], ["탄수화물", n.carb, "g"], ["단백질", n.protein, "g"], ["지방", n.fat, "g"]]
+        .filter(([, v]) => v).map(([k, v, u]) => `${k} ${Math.round(parseFloat(v))}${u}`);
+      if (facts.length) {
+        const row = el("div", null, "kcal");
+        facts.forEach((f) => row.append(el("span", f)));
+        panel.append(row);
+      }
+      const ing = splitIngredients(r.ingredients);
+      if (ing.length) {
+        panel.append(el("h4", "재료"));
+        for (const g of ing) {
+          const p = el("p");
+          if (g.head) p.append(el("b", `${g.head}: `));
+          p.append(document.createTextNode(g.text));
+          panel.append(p);
+        }
+      }
+      const steps = splitSteps(r.steps);
+      if (steps.length) {
+        panel.append(el("h4", "조리 순서"));
+        const ol = el("ol");
+        steps.forEach((s) => ol.append(el("li", s)));
+        panel.append(ol);
+      }
+      if (r.note) panel.append(el("h4", "알아두면 좋아요"), el("p", r.note.replace(/^\s*-\s*/, "")));
+      if (r.images?.length) {
+        const photos = el("div", null, "photos");
+        for (const u of r.images) photos.append(safeImg(u, { drop: true }));
+        panel.append(photos);
+      }
+    }
+
+    // 추천 요리: 썸네일을 누르면 그 아래에 레시피(재료·조리 순서)가 펼쳐진다
+    function fillRecipes(box, recipes) {
+      box.replaceChildren();
+      if (!recipes?.length) { box.append(el("p", "제공된 정보가 없습니다.", "none")); return; }
+      const grid = el("div", null, "recipes");
+      const panel = el("div", null, "recipe");
+      panel.hidden = true;
+      let openSn = null;
+      const cache = new Map();
+      for (const r of recipes) {
+        const btn = el("button");
+        btn.type = "button";
+        btn.setAttribute("aria-expanded", "false");
+        btn.append(r.image ? safeImg(r.image, { iconName: "utensils", ratio: "1" }) : placeholder("utensils", "1", ""));
+        btn.append(el("span", r.name, "name-line"));
+        if (!r.sn) btn.disabled = true; // 기본 데이터의 요리 이름은 상세 레시피가 없다
+        btn.addEventListener("click", async () => {
+          if (openSn === r.sn) { // 같은 요리를 다시 누르면 접는다
+            panel.hidden = true; openSn = null; btn.setAttribute("aria-expanded", "false"); return;
+          }
+          grid.querySelectorAll("button").forEach((b) => b.setAttribute("aria-expanded", "false"));
+          openSn = r.sn;
+          btn.setAttribute("aria-expanded", "true");
+          panel.hidden = false;
+          if (cache.has(r.sn)) return renderRecipe(panel, cache.get(r.sn));
+          panel.replaceChildren(el("p", "레시피를 불러오는 중…"));
+          btn.disabled = true;
+          try {
+            const data = await fetchRecipe(r.sn);
+            cache.set(r.sn, data);
+            if (openSn === r.sn) renderRecipe(panel, data);
+          } catch (e) {
+            if (openSn === r.sn) panel.replaceChildren(el("p", `레시피를 불러오지 못했습니다: ${e.message}`, "err"));
+          }
+          btn.disabled = false;
+        });
+        grid.append(btn);
+      }
+      box.append(grid, panel);
+    }
+
+    function fillResearch(box, text) {
+      box.replaceChildren();
+      if (!text) { box.append(el("p", "제공된 정보가 없습니다.", "none")); return; }
+      const det = el("details");
+      det.append(el("summary", "관련 연구 보기"), el("p", text.replace(/■/g, "")));
+      box.append(det);
+    }
+
+    // 식재료 이름·내용 채우기 (이 한 함수가 모든 식재료에 쓰인다)
+    function fill(d) {
+      $name.textContent = d.name || "이름 없음";
+      document.title = `${d.name} · 이달의 농식품`;
+      for (const key of ["pick", "storage", "tip", "eat", "nutrition", "origin", "stats"]) fillText(sections[key], d[key]);
+      fillRecipes(sections.recipes, d.recipes);
+      fillResearch(sections.research, d.research);
+    }
+
+    // 목록 API 응답에만 그림이 있다. 목록을 보고 온 경우 캐시에서 같은 번호의 그림을 찾는다.
+    async function fillPicture(name) {
+      const pic = document.getElementById("d-pic");
+      pic.replaceChildren(placeholder("leaf", "4/3", name));
+      if (!sn || !month) return;
+      try {
+        const list = await fetchFoodList(month);
+        const hit = list.items.find((i) => i.sn === sn);
+        if (hit?.image) pic.replaceChildren(safeImg(hit.image, { alt: name }));
+      } catch {}
+    }
+
+    // 기본 데이터(sample-data.js)를 같은 화면 틀에 맞춰 넣는다
+    function sampleToDetail(s) {
+      return {
+        name: s.name, pick: s.pick ? `■ ${s.pick}` : "", storage: s.storage ? `■ ${s.storage}` : "",
+        tip: (s.tips || []).map((t) => `■ ${t}`).join(""), eat: "", nutrition: s.desc ? `■ ${s.desc}` : "", origin: "", stats: "",
+        recipes: (s.dishes || []).map((n) => ({ sn: "", name: n, image: "" })), research: "",
+      };
+    }
+
+    async function init() {
+      if (sampleName) {
+        const all = Object.values(window.SAMPLE_FOOD_MONTH).flat();
+        const s = all.find((x) => x.name === sampleName);
+        if (!s) { $name.textContent = "식재료를 찾을 수 없습니다"; return; }
+        $status.textContent = "기본 데이터로 표시 중";
+        fill(sampleToDetail(s));
+        fillPicture(s.name);
+        return;
+      }
+      if (!/^\d{1,6}$/.test(sn)) {
+        $name.textContent = "식재료를 찾을 수 없습니다";
+        $status.textContent = "목록에서 식재료 카드를 눌러 들어와 주세요.";
+        return;
+      }
+      for (const box of Object.values(sections)) box.replaceChildren(el("p", "불러오는 중…", "loading"));
+      $status.textContent = "";
+      try {
+        const d = await fetchFoodDetail(sn);
+        if (!d.name) throw new Error("해당 번호의 식재료가 없습니다");
+        fill(d);
+        fillPicture(d.name);
+      } catch (e) {
+        $name.textContent = "정보를 불러오지 못했습니다";
+        $status.textContent = e.message;
+        for (const box of Object.values(sections)) box.replaceChildren(el("p", "제공된 정보가 없습니다.", "none"));
+      }
+    }
+    init();
+  </script>
+</body>
+</html>

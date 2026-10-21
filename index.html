@@ -7,144 +7,27 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;700&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@600;700&display=swap" rel="stylesheet" />
-  <style>
-    :root {
-      --bg: #f0fdf4; --ink: #14532d; --muted: #475569; --card: #ffffff;
-      --primary: #15803d; --on-primary: #ffffff; --accent: #a16207;
-      --line: #bbf7d0; --soft: #dcfce7; --danger: #b91c1c;
-      --spring: #dcfce7; --summer: #fef9c3; --fall: #ffedd5; --winter: #e0f2fe;
-      --shadow: 0 6px 18px rgba(20, 83, 45, .14);
-      --font-serif: "Lora", "Noto Serif KR", "Batang", serif;
-      --font-sans: "Noto Sans KR", "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #0b1a10; --ink: #dcfce7; --muted: #a9bbad; --card: #12261a;
-        --primary: #4ade80; --on-primary: #052e16; --accent: #facc15;
-        --line: #24452f; --soft: #173323; --danger: #f87171;
-        --spring: #14301f; --summer: #33300f; --fall: #3a2411; --winter: #112a3a;
-        --shadow: 0 6px 18px rgba(0, 0, 0, .45);
-      }
-    }
-    * { box-sizing: border-box; }
-    body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-sans); line-height: 1.6; }
-    h1, h2, .p-month { font-family: var(--font-serif); }
-    button { font: inherit; color: inherit; }
-    :focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
-    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-    svg.icon { width: 1.1em; height: 1.1em; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-
-    header { padding: 40px 16px 8px; text-align: center; }
-    h1 { margin: 0 0 6px; font-size: clamp(1.7rem, 4.5vw, 2.4rem); line-height: 1.25; }
-    header p { margin: 0; color: var(--muted); }
-
-    /* ── 3D 벽 달력 ───────────────────────────── */
-    .calendar { max-width: 1040px; margin: 0 auto; padding: 8px 16px 0; }
-    .tools { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: center; margin: 12px 0 4px; color: var(--muted); font-size: .88rem; }
-    .tools .group { display: inline-flex; gap: 6px; }
-    .tools button { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-                    padding: 0 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); cursor: pointer;
-                    transition: background-color .15s, border-color .15s; }
-    .tools button:hover { border-color: var(--primary); background: var(--soft); }
-    .stage { perspective: 1400px; overflow: clip; padding: 18px 4px 26px; }
-    .wall { transform-style: preserve-3d; transform: rotateX(var(--tx, 14deg)) rotateY(var(--ty, 0deg));
-            transition: transform .18s ease-out; user-select: none; touch-action: pan-y; }
-    .grid { display: grid; gap: 14px; grid-template-columns: repeat(2, minmax(0, 1fr)); transform-style: preserve-3d; }
-    @media (min-width: 560px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (min-width: 900px) { .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-
-    .panel { position: relative; display: flex; flex-direction: column; gap: 8px; min-height: 150px; padding: 14px 14px 12px;
-             text-align: left; cursor: pointer; border: 1px solid var(--line); border-radius: 20px 20px 24px 14px;
-             background: var(--season-bg, var(--card)); box-shadow: var(--shadow);
-             transform: translateZ(calc(var(--z, 0) * 1px));
-             transition: transform .2s ease-out, box-shadow .2s, border-color .2s; }
-    .panel:hover { transform: translateZ(calc(var(--z, 0) * 1px + 16px)) translateY(-2px); border-color: var(--primary); }
-    .panel[aria-pressed="true"] { border: 2px solid var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 25%, transparent), var(--shadow); }
-    .spring { --season-bg: var(--spring); } .summer { --season-bg: var(--summer); }
-    .fall { --season-bg: var(--fall); }     .winter { --season-bg: var(--winter); }
-    .p-top { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
-    .p-month { font-size: 2rem; font-weight: 700; line-height: 1; }
-    .p-month small { font-size: .9rem; margin-left: 2px; font-family: var(--font-sans); }
-    .p-season { font-size: .78rem; font-weight: 700; color: var(--accent); }
-    .p-now { align-self: flex-start; font-size: .72rem; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: var(--primary); color: var(--on-primary); }
-    .p-foods { display: flex; flex-wrap: wrap; gap: 4px; margin-top: auto; }
-    .p-foods span { font-size: .78rem; padding: 1px 8px; border-radius: 999px; background: color-mix(in srgb, var(--card) 70%, transparent); border: 1px solid var(--line); }
-    .p-foods .more, .p-foods .wait { color: var(--muted); }
-
-    /* ── 선택한 달의 식재료 ───────────────────── */
-    .detail-wrap { max-width: 1100px; margin: 0 auto; padding: 8px 16px 48px; scroll-margin-top: 12px; }
-    .detail-wrap h2 { margin: 8px 0 2px; font-size: 1.5rem; text-align: center; }
-    .status { text-align: center; color: var(--muted); font-size: .9rem; min-height: 1.6em; margin: 4px 16px 12px; }
-    main { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); align-items: start; }
-    .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px 18px 22px 14px; overflow: hidden; display: flex; flex-direction: column; }
-    .card > img { width: 100%; aspect-ratio: 16/10; object-fit: cover; background: var(--soft); }
-    .ph { display: flex; align-items: center; justify-content: center; width: 100%; color: var(--primary); background: var(--soft); }
-    .ph svg { width: 2.4rem; height: 2.4rem; }
-    .recipes .ph svg { width: 1.6rem; height: 1.6rem; }
-    .body { padding: 16px 18px 18px; }
-    .card h3.name { margin: 0 0 6px; font-family: var(--font-serif); font-size: 1.3rem; }
-    .desc { margin: 0 0 12px; color: var(--muted); }
-    .more-btn { width: 100%; min-height: 44px; margin-top: 8px; padding: 8px; border: 1.5px solid var(--primary); border-radius: 12px;
-                background: transparent; color: var(--primary); font-weight: 500; cursor: pointer; transition: background-color .15s; }
-    .more-btn:hover { background: var(--soft); }
-    .more-btn:disabled { opacity: .6; cursor: progress; }
-    .detail { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 4px; }
-    .err { color: var(--danger); font-size: .9rem; }
-    h4.sec { font-size: .95rem; margin: 14px 0 4px; color: var(--primary); }
-    .detail p { margin: 0 0 6px; font-size: .92rem; }
-    .detail p b { font-weight: 700; }
-    details { margin-top: 12px; font-size: .88rem; color: var(--muted); }
-    summary { cursor: pointer; }
-    ul.plain { margin: 0; padding-left: 1.1em; font-size: .92rem; }
-    .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-    .chips span { background: var(--soft); color: var(--primary); padding: 2px 10px; border-radius: 999px; font-size: .85rem; }
-    .recipes { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; margin-top: 6px; }
-    .recipes button { margin: 0; padding: 0; border: 2px solid transparent; border-radius: 12px; background: none; font-size: .82rem; text-align: left; cursor: pointer; }
-    .recipes button[aria-expanded="true"] { border-color: var(--primary); }
-    .recipes button:disabled { opacity: .6; cursor: progress; }
-    .recipes img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; background: var(--soft); }
-    .recipes .name-line { display: block; padding: 2px 2px 0; }
-    .recipe { margin-top: 10px; padding: 10px 12px; background: var(--soft); border-radius: 12px; }
-    .recipe h5 { margin: 10px 0 4px; font-size: .88rem; color: var(--primary); }
-    .recipe h4.r-title { margin: 0 0 4px; font-size: 1rem; }
-    .recipe ol { margin: 0; padding-left: 1.3em; font-size: .9rem; }
-    .recipe li { margin-bottom: 4px; }
-    .recipe .kcal { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: .85rem; color: var(--muted); }
-    .recipe .photos { display: flex; gap: 6px; overflow-x: auto; margin-top: 8px; }
-    .recipe .photos img { height: 90px; border-radius: 6px; flex: none; }
-    footer { text-align: center; color: var(--muted); font-size: .8rem; padding: 0 16px 32px; }
-
-    @media (prefers-reduced-motion: reduce) {
-      .wall, .panel, .tools button { transition: none; }
-      .panel:hover { transform: translateZ(calc(var(--z, 0) * 1px)); }
-    }
-  </style>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header>
+  <header class="top">
     <h1>이달의 농식품</h1>
-    <p>12개월 제철 달력에서 달을 고르고, 식재료 고르는 법부터 요리까지 확인하세요</p>
+    <p>달을 고르고, 마음에 드는 식재료 카드를 눌러 자세한 정보를 확인하세요</p>
   </header>
 
-  <section class="calendar" aria-label="12개월 제철 달력">
-    <div class="tools">
-      <span id="tilt-label">달력 기울기</span>
-      <div class="group" role="group" aria-labelledby="tilt-label">
-        <button type="button" id="t-up" aria-label="위로 눕히기"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg></button>
-        <button type="button" id="t-down" aria-label="아래로 눕히기"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
-        <button type="button" id="t-left" aria-label="왼쪽으로 돌리기"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
-        <button type="button" id="t-right" aria-label="오른쪽으로 돌리기"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
-        <button type="button" id="t-reset"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>초기화</button>
-      </div>
-      <span>마우스로 달력을 끌어서 돌려볼 수도 있어요</span>
-    </div>
-    <div class="stage"><div class="wall" id="wall"><div class="grid" id="grid"></div></div></div>
-  </section>
+  <nav class="months-nav" aria-label="월 선택"><div class="months" id="months"></div></nav>
+  <p class="status" id="status" role="status"></p>
 
-  <section class="detail-wrap" id="detail" aria-labelledby="title">
-    <h2 id="title">이달의 농식품</h2>
-    <p class="status" id="status" role="status"></p>
-    <main id="list"></main>
+  <section class="calendar" aria-labelledby="cal-title">
+    <div class="cal-frame" id="frame">
+      <div class="cal-bg" id="cal-bg" aria-hidden="true"></div>
+      <div class="cal-head">
+        <h2 id="cal-title">이달의 농식품</h2>
+        <span class="meta" id="cal-meta"></span>
+      </div>
+      <div class="stage"><div class="wall" id="wall"><div class="grid" id="grid"></div></div></div>
+      <p class="credit" id="credit"></p>
+    </div>
   </section>
 
   <footer>데이터: 공공데이터포털 농촌진흥청 이달의 농식품 · API를 쓸 수 없을 때는 기본 데이터를 보여줍니다</footer>
@@ -152,219 +35,55 @@
   <script src="sample-data.js"></script>
   <!-- 각자 로컬에 config.js 를 만든다 (config.example.js 참고). 없으면 404 가 나며 기본 데이터로 표시된다 -->
   <script src="config.js"></script>
+  <script src="common.js"></script>
   <script>
-    // 서버 없이 브라우저가 공공데이터포털을 직접 호출한다. 인증키는 로컬의 config.js 에만 있고 git 에는 올라가지 않는다.
-    // (이 방식은 키가 브라우저에 보이므로 config.js 를 공유하거나 이 페이지를 공개 배포하면 안 된다)
+    const $months = document.getElementById("months");
     const $grid = document.getElementById("grid");
     const $wall = document.getElementById("wall");
-    const $list = document.getElementById("list");
+    const $frame = document.getElementById("frame");
     const $status = document.getElementById("status");
-    const $title = document.getElementById("title");
-
-    const SEASONS = { 12: ["winter", "겨울"], 1: ["winter", "겨울"], 2: ["winter", "겨울"], 3: ["spring", "봄"], 4: ["spring", "봄"], 5: ["spring", "봄"],
-                      6: ["summer", "여름"], 7: ["summer", "여름"], 8: ["summer", "여름"], 9: ["fall", "가을"], 10: ["fall", "가을"], 11: ["fall", "가을"] };
     const thisMonth = new Date().getMonth() + 1;
-    const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    // API 응답은 외부 데이터이므로 innerHTML 대신 textContent 로 넣는다 (XSS 방지)
-    function el(tag, text, cls) {
-      const n = document.createElement(tag);
-      if (text != null) n.textContent = text;
-      if (cls) n.className = cls;
-      return n;
-    }
-
-    // Lucide 스타일 SVG 아이콘 (이모지 대신 사용)
-    const ICONS = {
-      leaf: ["M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z", "M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"],
-      utensils: ["M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2", "M7 2v20", "M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"],
-    };
-    function icon(name) {
-      const ns = "http://www.w3.org/2000/svg";
-      const svg = document.createElementNS(ns, "svg");
-      svg.setAttribute("viewBox", "0 0 24 24");
-      svg.setAttribute("class", "icon");
-      svg.setAttribute("aria-hidden", "true");
-      for (const d of ICONS[name]) { const p = document.createElementNS(ns, "path"); p.setAttribute("d", d); svg.append(p); }
-      return svg;
-    }
-
-    // ── 월별 데이터 (목록은 한 번 받아 두고 달력 패널과 상세 영역이 함께 쓴다) ──
-    const months = new Map();   // month -> { items, fromApi, error? }
-    const inflight = new Map();
-
-    // ── 공공데이터포털 직접 호출 ─────────────────
-    const CFG = window.APP_CONFIG || {};
-    const API_BASE = String(CFG.API_BASE || "https://apis.data.go.kr/1390803/allbaroFoodMonth").replace(/\/$/, "");
-    // Encoding 키(%XX 포함)는 그대로, Decoding 키(+ / = 포함)는 인코딩해서 붙인다
-    const KEY_PARAM = CFG.SERVICE_KEY && !/여기에/.test(CFG.SERVICE_KEY)
-      ? (/%[0-9A-Fa-f]{2}/.test(CFG.SERVICE_KEY) ? CFG.SERVICE_KEY : encodeURIComponent(CFG.SERVICE_KEY))
-      : "";
-
-    const GAP_MS = 1500, RETRY_WAITS = [4000, 12000, 30000];
-    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-    let tail = Promise.resolve(), lastCallAt = 0;
-
-    // 호출 제한(초당 요청 수)이 빡빡해서 한 줄로 세워 간격을 두고, 제한 오류(코드 23)면 기다렸다 재시도한다
-    function callApi(operation, params) {
-      if (!KEY_PARAM) return Promise.reject(new Error("config.js 가 없거나 SERVICE_KEY 가 비어 있습니다 (config.example.js 참고)"));
-      const job = tail.then(() => run(operation, params));
-      tail = job.catch(() => {});
-      return job;
-    }
-
-    async function run(operation, params) {
-      for (let attempt = 0; ; attempt++) {
-        const wait = lastCallAt + GAP_MS - Date.now();
-        if (wait > 0) await sleep(wait);
-        lastCallAt = Date.now();
-        const qs = new URLSearchParams({ format: "json", ...params });
-        const res = await fetch(`${API_BASE}/${operation}?serviceKey=${KEY_PARAM}&${qs}`);
-        const text = await res.text();
-        if (/<returnReasonCode>23<\/returnReasonCode>/.test(text) && attempt < RETRY_WAITS.length) {
-          await sleep(RETRY_WAITS[attempt]);
-          continue;
-        }
-        return parseResponse(text);
-      }
-    }
-
-    // 응답 형태: 게이트웨이 오류(XML) / 정상({response:{header,body}}) / 파라미터 오류({header,body:null})
-    function parseResponse(text) {
-      if (text.trim().startsWith("<")) {
-        const msg = text.match(/<returnAuthMsg>(.*?)<\/returnAuthMsg>/)?.[1] || "알 수 없는 게이트웨이 오류";
-        const code = text.match(/<returnReasonCode>(.*?)<\/returnReasonCode>/)?.[1];
-        throw new Error(`${msg} (code ${code})`);
-      }
-      const root = JSON.parse(text);
-      const r = root.response || root;
-      const code = String(r.header?.resultCode ?? "");
-      if (code !== "200") throw new Error(`${r.header?.resultMsg || "응답 오류"} (code ${code})`);
-      return r.body;
-    }
-
-    const asArray = (v) => (v == null ? [] : Array.isArray(v) ? v : [v]);
-
-    // 호출 횟수를 아끼려고 localStorage 에 캐시한다 (목록 1일, 상세·레시피 7일). 막혀 있어도 동작은 한다.
-    const TTL = { list: 24 * 3600e3, detail: 7 * 24 * 3600e3 };
-    async function cached(key, ttl, fetcher) {
-      try {
-        const hit = JSON.parse(localStorage.getItem(`foodmonth:${key}`) || "null");
-        if (hit && Date.now() - hit.at < ttl) return hit.body;
-      } catch {}
-      const body = await fetcher();
-      try { localStorage.setItem(`foodmonth:${key}`, JSON.stringify({ at: Date.now(), body })); } catch {}
-      return body;
-    }
-
-    const fetchFoodList = (month) => cached(`list:${month}`, TTL.list, async () => {
-      const body = await callApi("foodList", { srchMonth: String(month), pageNo: "1", numOfRows: "50" });
-      return { month, items: asArray(body?.items?.item).map((i) => ({ sn: i.fdmtSn, name: i.fdmtNm, image: i.fdmtImgUrl || "" })) };
-    });
-
-    const fetchFoodDetail = (sn) => cached(`food:${sn}`, TTL.detail, async () => {
-      const body = await callApi("foodCont", { srchFdmtSn: String(sn) });
-      const s = body?.stdInfo || {}, n = body?.ntkInfo || {};
-      return {
-        sn: s.fdmtSn, name: s.fdmtNm,
-        origin: s.ctvtIndcDtl || "", pick: s.prchCheatDtl || "", storage: s.cstdyMthDtl || "", tip: s.etcInfoDtl || "",
-        eat: n.ntkMthDtl || "", nutrition: n.ntrIrdntEfcyDtl || "", research: n.rltRsrchInfoDtl || "", stats: n.cnsmpqyDtl || "",
-        recipes: asArray(body?.connRecipeList?.recipeInfo).map((r) => ({ sn: r.recipeSn, name: r.recipeNm, image: r.recipeImgUrl || "" })),
-      };
-    });
-
-    const fetchRecipe = (sn) => cached(`recipe:${sn}`, TTL.detail, async () => {
-      const body = await callApi("recipeCont", { srchRecipeSn: String(sn) });
-      const s = body?.stdInfo || {}, nu = body?.nutriInfo || {};
-      return {
-        sn: s.recipeSn, name: s.recipeNm, ingredients: s.matrlInfo || "", steps: s.ckngMthInfo || "", note: s.grpMlsvApplc || "",
-        nutrition: { kcal: nu.clri, carb: nu.crbh, fat: nu.lipd, protein: nu.prot, sodium: nu.na },
-        images: asArray(body?.ckngImgList?.ckngImg).map((i) => i.ckngImgUrl).filter(Boolean),
-      };
-    });
-
-    function getMonth(m, retry = false) {
-      const have = months.get(m);
-      if (have && (have.fromApi || !retry)) return Promise.resolve(have);
-      if (inflight.has(m)) return inflight.get(m);
-      const p = (async () => {
-        try {
-          const d = await fetchFoodList(m);
-          if (!d.items?.length) throw new Error("API 결과가 비어 있습니다");
-          const v = { items: d.items, fromApi: true };
-          months.set(m, v);
-          return v;
-        } catch (e) {
-          const v = { items: window.SAMPLE_FOOD_MONTH[m] || [], fromApi: false, error: e.message };
-          months.set(m, v);
-          return v;
-        } finally {
-          inflight.delete(m);
-        }
-      })();
-      inflight.set(m, p);
-      return p;
-    }
-
-    // ── 달력 패널 ──────────────────────────────
-    const panels = new Map();
+    // ── 상단 월 선택 (1월 ~ 12월) ─────────────────
     for (let m = 1; m <= 12; m++) {
-      const [seasonCls, seasonName] = SEASONS[m];
-      const btn = el("button", null, `panel ${seasonCls}`);
-      btn.type = "button";
-      btn.dataset.month = m;
-      btn.setAttribute("aria-pressed", "false");
-      const top = el("span", null, "p-top");
-      const mo = el("span", String(m), "p-month");
-      mo.append(el("small", "월"));
-      top.append(mo, el("span", seasonName, "p-season"));
-      btn.append(top);
-      if (m === thisMonth) btn.append(el("span", "이번 달", "p-now"));
-      const foods = el("span", null, "p-foods");
-      foods.append(el("span", "불러오는 중…", "wait"));
-      btn.append(foods);
-      btn.setAttribute("aria-label", `${m}월, ${seasonName}${m === thisMonth ? ", 이번 달" : ""}`);
-      btn.addEventListener("click", () => select(m, true));
-      panels.set(m, { btn, foods, seasonName });
-      $grid.append(btn);
-    }
-
-    function updatePanel(m) {
-      const { btn, foods, seasonName } = panels.get(m);
-      const v = months.get(m);
-      foods.replaceChildren();
-      const names = v.items.map((i) => i.name).filter(Boolean);
-      names.slice(0, 4).forEach((n) => foods.append(el("span", n)));
-      if (names.length > 4) foods.append(el("span", `+${names.length - 4}`, "more"));
-      if (!names.length) foods.append(el("span", "정보 없음", "wait"));
-      btn.setAttribute("aria-label",
-        `${m}월, ${seasonName}${m === thisMonth ? ", 이번 달" : ""}, 제철 식재료 ${names.length}개${names.length ? `: ${names.slice(0, 4).join(", ")}` : ""}`);
-    }
-
-    // 현재 달부터 차례로 12개월 목록을 미리 받아 패널을 채운다 (API 호출 제한 때문에 한 번에 하나씩)
-    async function preloadAll() {
-      for (let i = 0; i < 12; i++) {
-        const m = ((thisMonth - 1 + i) % 12) + 1;
-        await getMonth(m);
-        updatePanel(m);
-      }
+      const b = el("button", `${m}월`);
+      b.type = "button";
+      b.dataset.month = m;
+      b.setAttribute("aria-pressed", "false");
+      if (m === thisMonth) { b.classList.add("now"); b.title = "이번 달"; }
+      b.addEventListener("click", () => select(m));
+      $months.append(b);
     }
 
     // ── 3D 기울기: 버튼 / 마우스 드래그 (휠은 페이지 스크롤을 가로채므로 쓰지 않는다) ──
     const TILT0 = reduceMotion ? { x: 0, y: 0 } : { x: 14, y: 0 };
     let tiltX = TILT0.x, tiltY = TILT0.y;
+    const PERSPECTIVE = 1400, Z_MAX = 52; // style.css 의 .stage perspective 와 같아야 한다 / 카드의 최대 튀어나옴(z + hover)
     function setTilt(x, y) {
       tiltX = Math.max(0, Math.min(50, x));
       tiltY = Math.max(-35, Math.min(35, y));
       $wall.style.setProperty("--tx", `${tiltX}deg`);
       $wall.style.setProperty("--ty", `${tiltY}deg`);
+      fit();
+    }
+
+    // 기울이면 가까워진 가장자리가 원근법으로 커져서 화면 밖으로 나간다.
+    // 달력 모서리를 같은 변환(rotateY → rotateX → 원근)으로 투영해 화면 폭을 넘으면 그만큼 줄여서 항상 다 보이게 한다.
+    function fit() {
+      const W = $grid.offsetWidth, H = $grid.offsetHeight;
+      if (!W || !H) return;
+      const rx = (tiltX * Math.PI) / 180, ry = (tiltY * Math.PI) / 180;
+      let maxX = 0;
+      for (const sx of [-1, 1]) for (const sy of [-1, 1]) for (const sz of [-1, 1]) {
+        const x = (sx * W) / 2, y = (sy * H) / 2, z = sz * Z_MAX;
+        const x1 = x * Math.cos(ry) + z * Math.sin(ry), z1 = -x * Math.sin(ry) + z * Math.cos(ry);
+        const z2 = y * Math.sin(rx) + z1 * Math.cos(rx);
+        maxX = Math.max(maxX, Math.abs(x1 * PERSPECTIVE / (PERSPECTIVE - z2)));
+      }
+      const avail = document.documentElement.clientWidth / 2 - 10;
+      $wall.style.setProperty("--k", Math.min(1, avail / maxX).toFixed(3));
     }
     setTilt(tiltX, tiltY);
-    document.getElementById("t-up").addEventListener("click", () => setTilt(tiltX + 6, tiltY));
-    document.getElementById("t-down").addEventListener("click", () => setTilt(tiltX - 6, tiltY));
-    document.getElementById("t-left").addEventListener("click", () => setTilt(tiltX, tiltY - 6));
-    document.getElementById("t-right").addEventListener("click", () => setTilt(tiltX, tiltY + 6));
-    document.getElementById("t-reset").addEventListener("click", () => setTilt(TILT0.x, TILT0.y));
 
     let drag = null, suppressClick = false;
     $wall.addEventListener("pointerdown", (e) => {
@@ -382,246 +101,124 @@
       if (drag && drag.moved > 6) { suppressClick = true; setTimeout(() => (suppressClick = false), 0); }
       drag = null;
     });
-    // 드래그한 직후에는 패널이 클릭된 것으로 처리하지 않는다
+    // 드래그한 직후에는 카드가 클릭된 것으로 처리하지 않는다 (링크 이동 방지)
     $wall.addEventListener("click", (e) => { if (suppressClick) { e.preventDefault(); e.stopPropagation(); } }, true);
 
-    // 가운데 패널일수록 앞으로 튀어나오게 깊이(z)를 준다
+    // 가운데 카드일수록 앞으로 튀어나오게 깊이(z)를 준다
     function layoutDepth() {
       const cols = getComputedStyle($grid).gridTemplateColumns.split(" ").length || 1;
-      const rows = Math.ceil(12 / cols);
-      panels.forEach(({ btn }, m) => {
-        const i = m - 1;
+      const cards = [...$grid.querySelectorAll(".fcard")];
+      const rows = Math.ceil(cards.length / cols) || 1;
+      cards.forEach((c, i) => {
         const dc = (i % cols) - (cols - 1) / 2, dr = Math.floor(i / cols) - (rows - 1) / 2;
         const dist = Math.hypot(dc / Math.max(cols - 1, 1), dr / Math.max(rows - 1, 1));
-        btn.style.setProperty("--z", String(Math.round(32 - dist * 60)));
+        c.style.setProperty("--z", String(Math.round(32 - dist * 60)));
       });
     }
-    layoutDepth();
-    new ResizeObserver(layoutDepth).observe($grid);
+    new ResizeObserver(() => { layoutDepth(); fit(); }).observe($grid);
 
-    // ── 선택한 달의 식재료 카드 ─────────────────
-    // "■ 제목- 내용 ■ 내용" 형태의 텍스트를 [{head, text}] 로 나눈다
-    function splitSections(text) {
-      return String(text || "").split("■").map((s) => s.trim()).filter(Boolean).map((s) => {
-        const m = s.match(/^([^-–:]{1,14}?)\s*[-–:]\s*([\s\S]+)$/);
-        return m ? { head: m[1].trim(), text: m[2].trim() } : { head: "", text: s };
-      });
+    // ── 월별 배경 사진 (Unsplash, 무료 라이선스 / 주소를 직접 연결하고 파일은 저장하지 않는다) ──
+    // 새 사진으로 바꿀 때는 id(photo- 뒤 부분), 촬영자, 사진 페이지 주소를 함께 바꾼다.
+    const BG = {
+      1:  { id: "1736332654737-1224ed263915", by: "Pascal Debrunner", page: "https://unsplash.com/photos/Bd-PwE6KnSc" },  // 눈 덮인 들판의 나무
+      2:  { id: "1737143765999-bd3be790ab4f", by: "Pascal Debrunner", page: "https://unsplash.com/photos/wvZ3zzUftD8" },  // 눈 덮인 들판과 산
+      3:  { id: "1707541124067-4878d84b9e47", by: "Kanae Kanesaki",  page: "https://unsplash.com/photos/NBicygNxy2Q" },  // 이른 봄 흰 꽃가지
+      4:  { id: "1775653273829-1f0cf2887de3", by: "Patrick Shaun",   page: "https://unsplash.com/photos/4meQsTrOla4" },  // 벚꽃
+      5:  { id: "1587462710036-1969570afa6b", by: "Nick Page",       page: "https://unsplash.com/photos/1ucxmmvQdgQ" },  // 새 잎이 돋은 나무
+      6:  { id: "1719178006695-e0e36780adac", by: "Bernd Dittrich",  page: "https://unsplash.com/photos/P7knt2DOvpc" },  // 초록 농경지
+      7:  { id: "1675203921973-9983f7386cee", by: "Josie Weiss",     page: "https://unsplash.com/photos/M2QXVaj4ees" },  // 햇살이 비치는 초원
+      8:  { id: "1721292175149-8a929b7635f7", by: "Austin",          page: "https://unsplash.com/photos/hnmqECheIkQ" },  // 노을 지는 작물 밭
+      9:  { id: "1758003293450-b9478f02bf48", by: "Huy Nguyen",      page: "https://unsplash.com/photos/OBD62-MyPAQ" },  // 황금빛 다랑논
+      10: { id: "1761839915942-019d1dea6145", by: "James Wainscoat", page: "https://unsplash.com/photos/dsll1jgW_FA" },  // 단풍 숲
+      11: { id: "1762515993692-7b9946f76858", by: "Pascal Debrunner", page: "https://unsplash.com/photos/moHqJmdANys" },  // 안개 낀 늦가을 숲
+      12: { id: "1768931482578-5ad93f78409d", by: "iuliu illes",     page: "https://unsplash.com/photos/jsTpgRWgP9o" },  // 눈 덮인 나무와 울타리
+    };
+    const bgUrl = (id) => `https://images.unsplash.com/photo-${id}?fm=jpg&q=70&w=1800&auto=format&fit=crop`;
+    const $bg = document.getElementById("cal-bg"), $credit = document.getElementById("credit");
+    let bgSeq = 0;
+    function setBackground(month) {
+      const b = BG[month];
+      const seq = ++bgSeq;
+      if (!b) return;
+      const img = new Image(); // 다 받은 뒤에 바꿔서, 로딩 중에 빈 화면이 깜빡이지 않게 한다
+      img.onload = () => {
+        if (seq !== bgSeq) return;
+        $bg.classList.remove("on");
+        setTimeout(() => {
+          if (seq !== bgSeq) return;
+          $bg.style.backgroundImage = `url("${bgUrl(b.id)}")`;
+          $bg.classList.add("on");
+        }, reduceMotion ? 0 : 200);
+      };
+      img.onerror = () => { if (seq === bgSeq) $bg.classList.remove("on"); }; // 사진을 못 받으면 계절 색만 보인다
+      img.src = bgUrl(b.id);
+      const a = el("a", b.by);
+      a.href = b.page; a.target = "_blank"; a.rel = "noopener noreferrer";
+      $credit.replaceChildren(document.createTextNode("사진: "), a, document.createTextNode(" / Unsplash"));
     }
 
-    function addText(parent, title, text) {
-      const secs = splitSections(text);
-      if (!secs.length) return;
-      parent.append(el("h4", title, "sec"));
-      for (const s of secs) {
-        const p = el("p");
-        if (s.head) p.append(el("b", `${s.head}: `));
-        p.append(document.createTextNode(s.text));
-        parent.append(p);
-      }
+    // ── 식재료 카드 ───────────────────────────
+    function foodCard(it, i, month, fromApi) {
+      // 상세 페이지는 하나이고 주소의 번호만 바뀐다. 기본 데이터는 이름으로 찾는다.
+      const href = fromApi ? `detail.html?sn=${encodeURIComponent(it.sn)}&m=${month}` : `detail.html?sample=${encodeURIComponent(it.name)}&m=${month}`;
+      const a = el("a", null, "fcard");
+      a.href = href;
+      a.draggable = false;
+      a.append(it.image ? safeImg(it.image, { alt: "" }) : placeholder("leaf", "4/3", ""));
+      const cap = el("span", null, "cap");
+      cap.append(el("span", it.name || "이름 없음", "nm"), el("span", String(i + 1).padStart(2, "0"), "no"));
+      a.append(cap);
+      return a;
     }
 
-    // 이미지 서버가 500 등으로 실패해도 깨진 아이콘 대신 아이콘 자리표시로 바꾼다 (복구되면 자동으로 이미지가 나온다)
-    // ratio: 자리표시 영역의 가로세로 비율, drop: true 면 실패 시 그냥 제거(조리 사진용)
-    function safeImg(src, { alt = "", iconName = "leaf", ratio = "16/10", drop = false } = {}) {
-      const img = el("img");
-      img.alt = alt; img.loading = "lazy"; img.src = src;
-      img.addEventListener("error", () => {
-        if (drop) return img.remove();
-        const ph = el("div", null, "ph");
-        ph.style.aspectRatio = ratio;
-        ph.setAttribute("role", "img"); ph.setAttribute("aria-label", alt);
-        ph.append(icon(iconName));
-        img.replaceWith(ph);
-      }, { once: true });
-      return img;
-    }
-
-    // "▶ 주재료 : 쇠고기(100g), 당근(30g)▶ 양념 : 소금(2작은술)" → [{head, text}]
-    function splitIngredients(text) {
-      return String(text || "").split("▶").map((s) => s.replace(/\s+/g, " ").trim()).filter(Boolean).map((s) => {
-        const m = s.match(/^([^:]{1,12}?)\s*:\s*([\s\S]+)$/);
-        return m ? { head: m[1].trim(), text: m[2].trim() } : { head: "", text: s };
-      });
-    }
-
-    // "1. 손질한다.2. 끓인다." → ["손질한다.", "끓인다."]  (소수점 "1.5컵" 은 뒤에 공백이 없어 나뉘지 않는다)
-    function splitSteps(text) {
-      const flat = String(text || "").replace(/\s+/g, " ").trim();
-      const steps = flat.match(/\d{1,2}\.\s[\s\S]*?(?=\d{1,2}\.\s|$)/g);
-      return steps ? steps.map((s) => s.replace(/^\d{1,2}\.\s/, "").trim()) : (flat ? [flat] : []);
-    }
-
-    function renderRecipe(panel, r) {
-      panel.replaceChildren(el("h4", r.name, "r-title"));
-      const n = r.nutrition || {};
-      const facts = [["열량", n.kcal, "kcal"], ["탄수화물", n.carb, "g"], ["단백질", n.protein, "g"], ["지방", n.fat, "g"]]
-        .filter(([, v]) => v).map(([k, v, u]) => `${k} ${Math.round(parseFloat(v))}${u}`);
-      if (facts.length) {
-        const row = el("div", null, "kcal");
-        facts.forEach((f) => row.append(el("span", f)));
-        panel.append(row);
+    // 목록은 한 번 받아 두고 같은 달을 다시 누르면 재사용한다
+    const months = new Map(); // month -> { items, fromApi, error? }
+    async function loadMonth(m) {
+      const have = months.get(m);
+      if (have?.fromApi) return have;
+      try {
+        const d = await fetchFoodList(m);
+        if (!d.items?.length) throw new Error("API 결과가 비어 있습니다");
+        const v = { items: d.items, fromApi: true };
+        months.set(m, v);
+        return v;
+      } catch (e) {
+        const v = { items: window.SAMPLE_FOOD_MONTH[m] || [], fromApi: false, error: e.message };
+        months.set(m, v);
+        return v;
       }
-      const ing = splitIngredients(r.ingredients);
-      if (ing.length) {
-        panel.append(el("h5", "재료"));
-        for (const g of ing) {
-          const p = el("p");
-          if (g.head) p.append(el("b", `${g.head}: `));
-          p.append(document.createTextNode(g.text));
-          panel.append(p);
-        }
-      }
-      const steps = splitSteps(r.steps);
-      if (steps.length) {
-        panel.append(el("h5", "조리 순서"));
-        const ol = el("ol");
-        steps.forEach((s) => ol.append(el("li", s)));
-        panel.append(ol);
-      }
-      if (r.note) panel.append(el("h5", "알아두면 좋아요"), el("p", r.note.replace(/^\s*-\s*/, "")));
-      if (r.images?.length) {
-        const photos = el("div", null, "photos");
-        for (const u of r.images) photos.append(safeImg(u, { drop: true }));
-        panel.append(photos);
-      }
-    }
-
-    function renderDetail(box, d) {
-      box.replaceChildren();
-      addText(box, "고르는 법·품종", d.pick);
-      addText(box, "보관·손질", d.storage);
-      addText(box, "손질·활용 팁", d.tip);
-      addText(box, "맛있게 먹는 법", d.eat);
-      addText(box, "영양·효능", d.nutrition);
-      addText(box, "유래·재배", d.origin);
-      addText(box, "생산 현황", d.stats);
-
-      if (d.recipes?.length) {
-        box.append(el("h4", "추천 요리 (눌러서 레시피 보기)", "sec"));
-        const grid = el("div", null, "recipes");
-        const panel = el("div", null, "recipe");
-        panel.hidden = true;
-        let openSn = null;
-        const cache = new Map();
-        for (const r of d.recipes) {
-          const btn = el("button");
-          btn.type = "button";
-          btn.setAttribute("aria-expanded", "false");
-          if (r.image) {
-            btn.append(safeImg(r.image, { iconName: "utensils", ratio: "1" }));
-          } else {
-            const ph = el("div", null, "ph"); ph.style.aspectRatio = "1"; ph.append(icon("utensils")); btn.append(ph);
-          }
-          btn.append(el("span", r.name, "name-line"));
-          btn.addEventListener("click", async () => {
-            if (openSn === r.sn) { // 같은 요리를 다시 누르면 접는다
-              panel.hidden = true; openSn = null; btn.setAttribute("aria-expanded", "false"); return;
-            }
-            grid.querySelectorAll("button").forEach((b) => b.setAttribute("aria-expanded", "false"));
-            openSn = r.sn;
-            btn.setAttribute("aria-expanded", "true");
-            panel.hidden = false;
-            if (cache.has(r.sn)) return renderRecipe(panel, cache.get(r.sn));
-            panel.replaceChildren(el("p", "레시피를 불러오는 중…"));
-            btn.disabled = true;
-            try {
-              const data = await fetchRecipe(r.sn);
-              cache.set(r.sn, data);
-              if (openSn === r.sn) renderRecipe(panel, data);
-            } catch (e) {
-              if (openSn === r.sn) panel.replaceChildren(el("p", `레시피를 불러오지 못했습니다: ${e.message}`, "err"));
-            }
-            btn.disabled = false;
-          });
-          grid.append(btn);
-        }
-        box.append(grid, panel);
-      }
-      if (d.research) {
-        const det = el("details");
-        det.append(el("summary", "관련 연구 보기"), el("p", d.research.replace(/■/g, "")));
-        box.append(det);
-      }
-    }
-
-    function render(items, fromApi) {
-      $list.replaceChildren();
-      for (const it of items) {
-        const card = el("article", null, "card");
-        if (it.image) {
-          card.append(safeImg(it.image, { alt: it.name }));
-        } else {
-          const ph = el("div", null, "ph"); ph.style.aspectRatio = "16/10"; ph.append(icon("leaf")); card.append(ph);
-        }
-        const body = el("div", null, "body");
-        body.append(el("h3", it.name || "이름 없음", "name"));
-
-        if (fromApi) {
-          const btn = el("button", "자세히 보기", "more-btn");
-          btn.type = "button";
-          const box = el("div", null, "detail");
-          box.hidden = true;
-          let loaded = false;
-          btn.addEventListener("click", async () => {
-            if (loaded) { box.hidden = !box.hidden; btn.textContent = box.hidden ? "자세히 보기" : "접기"; return; }
-            btn.disabled = true; btn.textContent = "불러오는 중…";
-            try {
-              renderDetail(box, await fetchFoodDetail(it.sn));
-              loaded = true;
-              btn.textContent = "접기";
-            } catch (e) {
-              box.replaceChildren(el("p", `상세 정보를 불러오지 못했습니다: ${e.message}`, "err"));
-              btn.textContent = "다시 시도";
-            }
-            box.hidden = false; btn.disabled = false;
-          });
-          body.append(btn, box);
-        } else {
-          // 기본 데이터(sample-data.js) 모드
-          if (it.desc) body.append(el("p", it.desc, "desc"));
-          if (it.pick) body.append(el("h4", "고르는 법", "sec"), el("p", it.pick));
-          if (it.storage) body.append(el("h4", "보관법", "sec"), el("p", it.storage));
-          if (it.tips?.length) {
-            body.append(el("h4", "손질·활용 팁", "sec"));
-            const ul = el("ul", null, "plain");
-            it.tips.forEach((t) => ul.append(el("li", t)));
-            body.append(ul);
-          }
-          if (it.dishes?.length) {
-            body.append(el("h4", "추천 요리", "sec"));
-            const chips = el("div", null, "chips");
-            it.dishes.forEach((d) => chips.append(el("span", d)));
-            body.append(chips);
-          }
-        }
-        card.append(body);
-        $list.append(card);
-      }
-      if (!items.length) $list.append(el("p", "표시할 데이터가 없습니다."));
     }
 
     // 연타로 달을 바꿀 때 늦게 도착한 이전 응답이 화면을 덮어쓰지 않게 한다
     let selectSeq = 0;
-    async function select(month, scroll = false) {
+    async function select(month) {
       const seq = ++selectSeq;
-      panels.forEach(({ btn }, m) => btn.setAttribute("aria-pressed", String(m === month)));
-      $title.textContent = `${month}월의 농식품`;
-      if (scroll) document.getElementById("detail").scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+      const [seasonCls, seasonName] = SEASONS[month];
+      $months.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(+b.dataset.month === month)));
+      $frame.className = `cal-frame ${seasonCls}`;
+      document.getElementById("cal-title").textContent = `${month}월`;
+      document.getElementById("cal-meta").replaceChildren();
+      document.title = `${month}월의 농식품`;
+      setBackground(month);
+      try { history.replaceState(null, "", `?m=${month}`); } catch {}  // 상세에서 돌아올 때 같은 달로 오도록
 
-      let v = months.get(month);
-      if (!v?.fromApi) {
-        $status.textContent = "불러오는 중…";
-        $list.replaceChildren();
-        v = await getMonth(month, !!v); // 이전에 실패했다면 한 번 더 시도
-        updatePanel(month);
-      }
+      $status.textContent = "불러오는 중…";
+      $grid.replaceChildren();
+      const v = await loadMonth(month);
       if (seq !== selectSeq) return;
-      $status.textContent = v.fromApi ? `공공데이터포털 API · ${v.items.length}개 식재료` : `기본 데이터로 표시 중 (${v.error})`;
-      render(v.items, v.fromApi);
-    }
 
-    select(thisMonth);
-    preloadAll();
+      $status.textContent = v.fromApi ? "" : `기본 데이터로 표시 중 (${v.error})`;
+      const meta = document.getElementById("cal-meta");
+      meta.replaceChildren(el("b", seasonName), document.createTextNode(` · 제철 식재료 ${v.items.length}개`));
+      v.items.forEach((it, i) => $grid.append(foodCard(it, i, month, v.fromApi)));
+      if (!v.items.length) $grid.append(el("p", "표시할 데이터가 없습니다.", "empty"));
+      layoutDepth();
+      fit();
+    }
+    addEventListener("resize", fit);
+
+    const qm = Number(new URLSearchParams(location.search).get("m"));
+    select(qm >= 1 && qm <= 12 ? qm : thisMonth);
   </script>
 </body>
 </html>

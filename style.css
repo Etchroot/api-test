@@ -1,0 +1,130 @@
+/* 이달의 농식품 — 목록(index.html)과 상세(detail.html) 공용 스타일. 스타일: Organic Biophilic */
+:root {
+  --bg: #f0fdf4; --ink: #14532d; --muted: #475569; --card: #ffffff;
+  --primary: #15803d; --on-primary: #ffffff; --accent: #a16207;
+  --line: #bbf7d0; --soft: #dcfce7; --danger: #b91c1c;
+  --spring: #dcfce7; --summer: #fef9c3; --fall: #ffedd5; --winter: #e0f2fe;
+  --shadow: 0 6px 18px rgba(20, 83, 45, .14);
+  --font-serif: "Lora", "Noto Serif KR", "Batang", serif;
+  --font-sans: "Noto Sans KR", "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0b1a10; --ink: #dcfce7; --muted: #a9bbad; --card: #12261a;
+    --primary: #4ade80; --on-primary: #052e16; --accent: #facc15;
+    --line: #24452f; --soft: #173323; --danger: #f87171;
+    --spring: #14301f; --summer: #33300f; --fall: #3a2411; --winter: #112a3a;
+    --shadow: 0 6px 18px rgba(0, 0, 0, .45);
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; overflow-x: clip; background: var(--bg); color: var(--ink); font-family: var(--font-sans); line-height: 1.6; }
+h1, h2, .serif { font-family: var(--font-serif); }
+button { font: inherit; color: inherit; }
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+svg.icon { width: 1.1em; height: 1.1em; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.spring { --season-bg: var(--spring); } .summer { --season-bg: var(--summer); }
+.fall { --season-bg: var(--fall); }     .winter { --season-bg: var(--winter); }
+.ph { display: flex; align-items: center; justify-content: center; width: 100%; color: var(--primary); background: var(--soft); }
+.ph svg { width: 2.4rem; height: 2.4rem; }
+.err { color: var(--danger); font-size: .92rem; }
+.status { text-align: center; color: var(--muted); font-size: .9rem; min-height: 1.6em; margin: 8px 16px; }
+footer { text-align: center; color: var(--muted); font-size: .8rem; padding: 24px 16px 32px; }
+
+/* ── 목록 페이지 ───────────────────────────── */
+/* 달력 바깥·안의 텍스트 요소: 배경은 투명, 카드(.stage, z-index 1)보다 위 레이어. 카드가 밑으로 지나가도 글자가 읽히게 얇은 글로우를 둔다 */
+header.top, nav.months-nav, .status, footer, .cal-head { position: relative; z-index: 3; --halo: var(--bg);
+  text-shadow: 0 0 4px var(--halo), 0 0 10px var(--halo); }
+.cal-frame { --halo: var(--season-bg, var(--bg)); }
+.cal-head { z-index: 2; }
+header.top { padding: 36px 16px 8px; text-align: center; }
+header.top h1 { margin: 0 0 6px; font-size: clamp(1.7rem, 4.5vw, 2.4rem); line-height: 1.25; }
+header.top p { margin: 0; color: var(--muted); }
+
+.months { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; max-width: 760px; margin: 14px auto 0; padding: 0 16px; }
+@media (min-width: 720px) { .months { grid-template-columns: repeat(12, 1fr); } }
+.months button { min-height: 44px; border: 1px solid var(--line); border-radius: 12px; background: transparent; cursor: pointer;
+                 font-weight: 500; white-space: nowrap; padding: 0; transition: background-color .15s, border-color .15s; }
+.months button:hover { border-color: var(--primary); background: var(--soft); }
+.months button[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: var(--on-primary); text-shadow: none; }
+.months button.now::after { content: ""; display: block; width: 5px; height: 5px; margin: -4px auto 0; border-radius: 50%; background: currentColor; }
+
+/* 달력 배경은 화면 좌우 끝까지 채우고, 안의 내용만 1040px 폭으로 가운데 정렬한다 */
+.calendar { margin: 16px 0 0; padding: 0; }
+.cal-frame { position: relative; background: var(--season-bg, var(--card)); border: 0; border-radius: 0;
+             padding: 22px max(16px, calc((100% - 1040px) / 2)) 10px; }
+/* 월별 사진: 계절 색을 얹어 글자와 카드가 읽히게 한다. 사진을 다 받은 뒤에 서서히 나타난다 */
+.cal-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: 0; transition: opacity .5s ease;
+          background-size: cover; background-position: center; }
+.cal-bg.on { opacity: 1; }
+.cal-bg::after { content: ""; position: absolute; inset: 0;
+                 background: color-mix(in srgb, var(--season-bg) var(--tint, 26%), transparent); }
+@media (prefers-color-scheme: dark) { .cal-bg::after { --tint: 48%; } }
+.credit { position: relative; z-index: 3; margin: 0; padding: 0 0 8px; text-align: right; font-size: .75rem; color: var(--muted);
+          text-shadow: 0 0 4px var(--halo), 0 0 10px var(--halo); }
+.credit a { color: inherit; }
+.cal-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 12px; padding: 0 8px; }
+.cal-head h2 { margin: 0; font-size: clamp(1.6rem, 4vw, 2.1rem); line-height: 1.2; }
+.cal-head .meta { color: var(--muted); font-size: .9rem; }
+.cal-head .meta b { color: var(--accent); }
+/* 달력(.stage)은 잘라내지 않는다. 기울기에 맞춰 --k 로 화면 폭 안에 들어오게 줄이고, 텍스트는 카드보다 위 레이어에 둔다 */
+.stage { perspective: 1400px; position: relative; z-index: 1; padding: 24px 4px 32px; }
+.wall { transform-style: preserve-3d; transform: scale(var(--k, 1)) rotateX(var(--tx, 14deg)) rotateY(var(--ty, 0deg));
+        transition: transform .18s ease-out; user-select: none; touch-action: pan-y; }
+.grid { display: grid; gap: 14px; grid-template-columns: repeat(2, minmax(0, 1fr)); transform-style: preserve-3d; }
+@media (min-width: 560px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 900px) { .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+.fcard { position: relative; display: flex; flex-direction: column; overflow: hidden; text-decoration: none;
+         background: var(--card); border: 1px solid var(--line); border-radius: 18px 18px 22px 14px; box-shadow: var(--shadow);
+         transform: translateZ(calc(var(--z, 0) * 1px)); transition: transform .2s ease-out, box-shadow .2s, border-color .2s; -webkit-user-drag: none; }
+.fcard:hover { transform: translateZ(calc(var(--z, 0) * 1px + 16px)) translateY(-2px); border-color: var(--primary); }
+.fcard img, .fcard .ph { display: block; width: 100%; aspect-ratio: 4/3; object-fit: cover; background: var(--soft); border-radius: 0; -webkit-user-drag: none; }
+.fcard .cap { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 10px 12px 12px; }
+.fcard .nm { font-family: var(--font-serif); font-size: 1.1rem; font-weight: 700; line-height: 1.3; }
+.fcard .no { font-size: .75rem; color: var(--accent); font-weight: 700; flex: none; }
+.empty { grid-column: 1 / -1; text-align: center; color: var(--muted); padding: 24px 0; }
+
+/* ── 상세 페이지 ───────────────────────────── */
+.wrap { max-width: 760px; margin: 0 auto; padding: 16px 16px 8px; }
+.back { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px;
+        background: var(--card); text-decoration: none; transition: background-color .15s, border-color .15s; }
+.back:hover { border-color: var(--primary); background: var(--soft); }
+.hero { display: grid; gap: 16px; margin: 16px 0 8px; padding: 14px; border: 1px solid var(--line); border-radius: 24px 24px 28px 18px; background: var(--season-bg, var(--card)); }
+@media (min-width: 600px) { .hero { grid-template-columns: 240px 1fr; align-items: center; } }
+.hero .pic img, .hero .pic .ph { display: block; width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 16px; }
+.hero .crumb { margin: 0; font-size: .9rem; color: var(--accent); font-weight: 700; }
+.hero h1 { margin: 2px 0 4px; font-size: clamp(1.9rem, 6vw, 2.6rem); line-height: 1.2; }
+.hero .sub { margin: 0; color: var(--muted); font-size: .92rem; }
+.sec { margin: 14px 0; padding: 16px 18px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; }
+.sec h2 { margin: 0 0 8px; font-size: 1.1rem; color: var(--primary); }
+.sec .content p { margin: 0 0 8px; font-size: .96rem; }
+.sec .content p b { font-weight: 700; }
+.sec .none { color: var(--muted); font-size: .92rem; margin: 0; }
+.loading { text-align: center; color: var(--muted); padding: 8px 0; }
+details { font-size: .92rem; color: var(--muted); }
+summary { cursor: pointer; min-height: 32px; }
+
+.recipes { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
+.recipes button { margin: 0; padding: 0; border: 2px solid transparent; border-radius: 12px; background: none; font-size: .86rem; text-align: left; cursor: pointer; }
+.recipes button[aria-expanded="true"] { border-color: var(--primary); }
+.recipes button:disabled { opacity: .6; cursor: progress; }
+.recipes img, .recipes .ph { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 10px; background: var(--soft); }
+.recipes .ph svg { width: 1.6rem; height: 1.6rem; }
+.recipes .name-line { display: block; padding: 4px 2px 0; }
+.recipe { margin-top: 12px; padding: 12px 14px; background: var(--soft); border-radius: 12px; }
+.recipe h3 { margin: 0 0 4px; font-size: 1.05rem; }
+.recipe h4 { margin: 12px 0 4px; font-size: .9rem; color: var(--primary); }
+.recipe ol { margin: 0; padding-left: 1.3em; font-size: .92rem; }
+.recipe li { margin-bottom: 4px; }
+.recipe p { margin: 0 0 6px; font-size: .92rem; }
+.recipe .kcal { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: .85rem; color: var(--muted); }
+.recipe .photos { display: flex; gap: 6px; overflow-x: auto; margin-top: 8px; }
+.recipe .photos img { height: 90px; width: auto; aspect-ratio: auto; border-radius: 6px; flex: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .wall, .fcard, .months button, .cal-bg { transition: none; }
+  .fcard:hover { transform: translateZ(calc(var(--z, 0) * 1px)); }
+}
