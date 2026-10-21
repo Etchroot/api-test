@@ -2,6 +2,14 @@
 // 서버 없이 브라우저가 포털을 직접 호출한다. 인증키는 로컬의 config.js 에만 있고 git 에는 올라가지 않는다.
 // (이 방식은 키가 브라우저에 보이므로 config.js 를 공유하거나 이 페이지를 공개 배포하면 안 된다)
 
+// API 주소는 여기 한 곳에 모은다. 주소를 바꾸면 화면이 쓰는 API가 바뀐다.
+const API = {
+  BASE: "https://apis.data.go.kr/1390803/allbaroFoodMonth", // 🔌 농촌진흥청 이달의 농식품 (공공데이터포털)
+  FOOD_LIST: "foodList",       // 🔌 월별 식재료 목록 (목록은 foods-data.js 에 고정해 두어 지금은 호출하지 않는다)
+  FOOD_DETAIL: "foodCont",     // 🔌 식재료 상세 (고르는 법, 보관법, 영양 등)
+  RECIPE_DETAIL: "recipeCont", // 🔌 레시피 상세 (재료, 조리 순서)
+};
+
 // API 응답은 외부 데이터이므로 innerHTML 대신 textContent 로 넣는다 (XSS 방지)
 function el(tag, text, cls) {
   const n = document.createElement(tag);
@@ -50,7 +58,7 @@ function safeImg(src, { alt = "", iconName = "leaf", ratio = "4/3", drop = false
 
 // ── 공공데이터포털 직접 호출 ─────────────────
 const CFG = window.APP_CONFIG || {};
-const API_BASE = String(CFG.API_BASE || "https://apis.data.go.kr/1390803/allbaroFoodMonth").replace(/\/$/, "");
+const API_BASE = String(CFG.API_BASE || API.BASE).replace(/\/$/, "");
 // Encoding 키(%XX 포함)는 그대로, Decoding 키(+ / = 포함)는 인코딩해서 붙인다
 function normalizeKey(k) {
   k = String(k || "").trim();
@@ -116,7 +124,9 @@ async function run(operation, params) {
     if (wait > 0) await sleep(wait);
     lastCallAt = Date.now();
     const qs = new URLSearchParams({ format: "json", ...params });
-    const res = await fetch(`${API_BASE}/${operation}?serviceKey=${KEY_PARAM}&${qs}`);
+    const url = `${API_BASE}/${operation}?serviceKey=${KEY_PARAM}&${qs}`;
+    const res = await fetch(url); // 🔌 API 호출
+    logCall({ label: `${operation} ${qs}`, shown: `${API_BASE}/${operation}?serviceKey=●●●●&${qs}`, url, status: res.status });
     const text = await res.text();
     if (/returnReasonCode[^0-9]{1,6}23\b/.test(text) && attempt < RETRY_WAITS.length) { // XML·JSON 어느 쪽으로 와도
       await sleep(RETRY_WAITS[attempt]);
@@ -142,6 +152,50 @@ function parseResponse(text) {
   return r.body;
 }
 
+// ── "🔌 이 화면이 쓰는 API" 상자: 실제로 부른 주소(키는 가림)를 보여 준다 ──
+const API_LOG = [];
+function logCall(entry) {
+  API_LOG.push({ ...entry, at: new Date() });
+  if (API_LOG.length > 30) API_LOG.shift();
+  document.dispatchEvent(new Event("apilog"));
+}
+
+function apiBox(note) {
+  const box = el("section", null, "apibox");
+  box.setAttribute("aria-labelledby", "apibox-title");
+  const title = el("h2", "🔌 이 화면이 쓰는 API");
+  title.id = "apibox-title";
+  box.append(title);
+  const ul = el("ul", null, "api-ops");
+  for (const [name, op, desc] of [["식재료 목록", API.FOOD_LIST, "고정 목록(foods-data.js)을 써서 호출하지 않음"], ["식재료 상세", API.FOOD_DETAIL, "상세 화면에서 호출"], ["레시피 상세", API.RECIPE_DETAIL, "추천 요리를 누르면 호출"]]) {
+    ul.append(el("li", `${name}: ${API_BASE}/${op} — ${desc}`));
+  }
+  box.append(ul);
+  if (note) box.append(el("p", note, "hint"));
+  const head = el("h3", "실제로 부른 주소");
+  const list = el("ol", null, "api-calls");
+  const warn = el("p", "원본 보기 링크에는 내 인증키가 들어 있어요. 화면을 다른 사람에게 보여 주는 중에는 누르지 마세요.", "hint");
+  box.append(head, list, warn);
+  const draw = () => {
+    list.replaceChildren();
+    if (!API_LOG.length) { list.append(el("li", "아직 부른 주소가 없어요.", "hint")); return; }
+    for (const c of API_LOG) {
+      const li = el("li");
+      if (c.cached) { li.append(el("span", `${c.label} — 이 브라우저에 저장된 결과를 써서 호출하지 않았어요`)); }
+      else {
+        li.append(el("code", c.shown), document.createTextNode(` (HTTP ${c.status}) `));
+        const a = el("a", "새 탭에서 원본 JSON 보기");
+        a.href = c.url; a.target = "_blank"; a.rel = "noopener noreferrer";
+        li.append(a);
+      }
+      list.append(li);
+    }
+  };
+  draw();
+  document.addEventListener("apilog", draw);
+  return box;
+}
+
 const asArray = (v) => (v == null ? [] : Array.isArray(v) ? v : [v]);
 
 // 호출 횟수를 아끼려고 localStorage 에 캐시한다 (목록 1일, 상세·레시피 7일). 막혀 있어도 동작은 한다.
@@ -149,7 +203,7 @@ const TTL = { list: 24 * 3600e3, detail: 7 * 24 * 3600e3 };
 async function cached(key, ttl, fetcher) {
   try {
     const hit = JSON.parse(localStorage.getItem(`foodmonth:${key}`) || "null");
-    if (hit && Date.now() - hit.at < ttl) return hit.body;
+    if (hit && Date.now() - hit.at < ttl) { logCall({ label: key, cached: true }); return hit.body; }
   } catch {}
   const body = await fetcher();
   try { localStorage.setItem(`foodmonth:${key}`, JSON.stringify({ at: Date.now(), body })); } catch {}
@@ -165,12 +219,12 @@ function foodPhotoUrl(sn, w = 900) {
 
 // 월별 목록은 foods-data.js 에 고정해 두었다. 이 함수는 고정 목록이 없을 때만 API 로 받는다.
 const fetchFoodList = (month) => cached(`list:${month}`, TTL.list, async () => {
-  const body = await callApi("foodList", { srchMonth: String(month), pageNo: "1", numOfRows: "50" });
+  const body = await callApi(API.FOOD_LIST, { srchMonth: String(month), pageNo: "1", numOfRows: "50" });
   return { month, items: asArray(body?.items?.item).map((i) => ({ sn: i.fdmtSn, name: i.fdmtNm, image: i.fdmtImgUrl || "" })) };
 });
 
 const fetchFoodDetail = (sn) => cached(`food:${sn}`, TTL.detail, async () => {
-  const body = await callApi("foodCont", { srchFdmtSn: String(sn) });
+  const body = await callApi(API.FOOD_DETAIL, { srchFdmtSn: String(sn) });
   const s = body?.stdInfo || {}, n = body?.ntkInfo || {};
   return {
     sn: s.fdmtSn, name: s.fdmtNm,
@@ -181,7 +235,7 @@ const fetchFoodDetail = (sn) => cached(`food:${sn}`, TTL.detail, async () => {
 });
 
 const fetchRecipe = (sn) => cached(`recipe:${sn}`, TTL.detail, async () => {
-  const body = await callApi("recipeCont", { srchRecipeSn: String(sn) });
+  const body = await callApi(API.RECIPE_DETAIL, { srchRecipeSn: String(sn) });
   const s = body?.stdInfo || {}, nu = body?.nutriInfo || {};
   return {
     sn: s.recipeSn, name: s.recipeNm, ingredients: s.matrlInfo || "", steps: s.ckngMthInfo || "", note: s.grpMlsvApplc || "",
