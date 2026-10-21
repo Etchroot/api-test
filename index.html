@@ -150,9 +150,11 @@
   <footer>데이터: 공공데이터포털 농촌진흥청 이달의 농식품 · API를 쓸 수 없을 때는 기본 데이터를 보여줍니다</footer>
 
   <script src="sample-data.js"></script>
+  <!-- 각자 로컬에 config.js 를 만든다 (config.example.js 참고). 없으면 404 가 나며 기본 데이터로 표시된다 -->
+  <script src="config.js"></script>
   <script>
-    // 브라우저는 API 키를 전혀 모른다. 같은 서버의 /api/* 만 호출하고,
-    // 키는 server.js 가 .env 에서 읽어 공공데이터포털에 붙여 보낸다.
+    // 서버 없이 브라우저가 공공데이터포털을 직접 호출한다. 인증키는 로컬의 config.js 에만 있고 git 에는 올라가지 않는다.
+    // (이 방식은 키가 브라우저에 보이므로 config.js 를 공유하거나 이 페이지를 공개 배포하면 안 된다)
     const $grid = document.getElementById("grid");
     const $wall = document.getElementById("wall");
     const $list = document.getElementById("list");
@@ -191,13 +193,95 @@
     const months = new Map();   // month -> { items, fromApi, error? }
     const inflight = new Map();
 
-    async function api(url) {
-      if (location.protocol === "file:") throw new Error("파일로 직접 열어 API를 호출할 수 없습니다 (node server.js 로 실행하세요)");
-      const res = await fetch(url);
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-      return data;
+    // ── 공공데이터포털 직접 호출 ─────────────────
+    const CFG = window.APP_CONFIG || {};
+    const API_BASE = String(CFG.API_BASE || "https://apis.data.go.kr/1390803/allbaroFoodMonth").replace(/\/$/, "");
+    // Encoding 키(%XX 포함)는 그대로, Decoding 키(+ / = 포함)는 인코딩해서 붙인다
+    const KEY_PARAM = CFG.SERVICE_KEY && !/여기에/.test(CFG.SERVICE_KEY)
+      ? (/%[0-9A-Fa-f]{2}/.test(CFG.SERVICE_KEY) ? CFG.SERVICE_KEY : encodeURIComponent(CFG.SERVICE_KEY))
+      : "";
+
+    const GAP_MS = 1500, RETRY_WAITS = [4000, 12000, 30000];
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    let tail = Promise.resolve(), lastCallAt = 0;
+
+    // 호출 제한(초당 요청 수)이 빡빡해서 한 줄로 세워 간격을 두고, 제한 오류(코드 23)면 기다렸다 재시도한다
+    function callApi(operation, params) {
+      if (!KEY_PARAM) return Promise.reject(new Error("config.js 가 없거나 SERVICE_KEY 가 비어 있습니다 (config.example.js 참고)"));
+      const job = tail.then(() => run(operation, params));
+      tail = job.catch(() => {});
+      return job;
     }
+
+    async function run(operation, params) {
+      for (let attempt = 0; ; attempt++) {
+        const wait = lastCallAt + GAP_MS - Date.now();
+        if (wait > 0) await sleep(wait);
+        lastCallAt = Date.now();
+        const qs = new URLSearchParams({ format: "json", ...params });
+        const res = await fetch(`${API_BASE}/${operation}?serviceKey=${KEY_PARAM}&${qs}`);
+        const text = await res.text();
+        if (/<returnReasonCode>23<\/returnReasonCode>/.test(text) && attempt < RETRY_WAITS.length) {
+          await sleep(RETRY_WAITS[attempt]);
+          continue;
+        }
+        return parseResponse(text);
+      }
+    }
+
+    // 응답 형태: 게이트웨이 오류(XML) / 정상({response:{header,body}}) / 파라미터 오류({header,body:null})
+    function parseResponse(text) {
+      if (text.trim().startsWith("<")) {
+        const msg = text.match(/<returnAuthMsg>(.*?)<\/returnAuthMsg>/)?.[1] || "알 수 없는 게이트웨이 오류";
+        const code = text.match(/<returnReasonCode>(.*?)<\/returnReasonCode>/)?.[1];
+        throw new Error(`${msg} (code ${code})`);
+      }
+      const root = JSON.parse(text);
+      const r = root.response || root;
+      const code = String(r.header?.resultCode ?? "");
+      if (code !== "200") throw new Error(`${r.header?.resultMsg || "응답 오류"} (code ${code})`);
+      return r.body;
+    }
+
+    const asArray = (v) => (v == null ? [] : Array.isArray(v) ? v : [v]);
+
+    // 호출 횟수를 아끼려고 localStorage 에 캐시한다 (목록 1일, 상세·레시피 7일). 막혀 있어도 동작은 한다.
+    const TTL = { list: 24 * 3600e3, detail: 7 * 24 * 3600e3 };
+    async function cached(key, ttl, fetcher) {
+      try {
+        const hit = JSON.parse(localStorage.getItem(`foodmonth:${key}`) || "null");
+        if (hit && Date.now() - hit.at < ttl) return hit.body;
+      } catch {}
+      const body = await fetcher();
+      try { localStorage.setItem(`foodmonth:${key}`, JSON.stringify({ at: Date.now(), body })); } catch {}
+      return body;
+    }
+
+    const fetchFoodList = (month) => cached(`list:${month}`, TTL.list, async () => {
+      const body = await callApi("foodList", { srchMonth: String(month), pageNo: "1", numOfRows: "50" });
+      return { month, items: asArray(body?.items?.item).map((i) => ({ sn: i.fdmtSn, name: i.fdmtNm, image: i.fdmtImgUrl || "" })) };
+    });
+
+    const fetchFoodDetail = (sn) => cached(`food:${sn}`, TTL.detail, async () => {
+      const body = await callApi("foodCont", { srchFdmtSn: String(sn) });
+      const s = body?.stdInfo || {}, n = body?.ntkInfo || {};
+      return {
+        sn: s.fdmtSn, name: s.fdmtNm,
+        origin: s.ctvtIndcDtl || "", pick: s.prchCheatDtl || "", storage: s.cstdyMthDtl || "", tip: s.etcInfoDtl || "",
+        eat: n.ntkMthDtl || "", nutrition: n.ntrIrdntEfcyDtl || "", research: n.rltRsrchInfoDtl || "", stats: n.cnsmpqyDtl || "",
+        recipes: asArray(body?.connRecipeList?.recipeInfo).map((r) => ({ sn: r.recipeSn, name: r.recipeNm, image: r.recipeImgUrl || "" })),
+      };
+    });
+
+    const fetchRecipe = (sn) => cached(`recipe:${sn}`, TTL.detail, async () => {
+      const body = await callApi("recipeCont", { srchRecipeSn: String(sn) });
+      const s = body?.stdInfo || {}, nu = body?.nutriInfo || {};
+      return {
+        sn: s.recipeSn, name: s.recipeNm, ingredients: s.matrlInfo || "", steps: s.ckngMthInfo || "", note: s.grpMlsvApplc || "",
+        nutrition: { kcal: nu.clri, carb: nu.crbh, fat: nu.lipd, protein: nu.prot, sodium: nu.na },
+        images: asArray(body?.ckngImgList?.ckngImg).map((i) => i.ckngImgUrl).filter(Boolean),
+      };
+    });
 
     function getMonth(m, retry = false) {
       const have = months.get(m);
@@ -205,7 +289,7 @@
       if (inflight.has(m)) return inflight.get(m);
       const p = (async () => {
         try {
-          const d = await api(`/api/foods?month=${m}`);
+          const d = await fetchFoodList(m);
           if (!d.items?.length) throw new Error("API 결과가 비어 있습니다");
           const v = { items: d.items, fromApi: true };
           months.set(m, v);
@@ -441,7 +525,7 @@
             panel.replaceChildren(el("p", "레시피를 불러오는 중…"));
             btn.disabled = true;
             try {
-              const data = await api(`/api/recipe?sn=${encodeURIComponent(r.sn)}`);
+              const data = await fetchRecipe(r.sn);
               cache.set(r.sn, data);
               if (openSn === r.sn) renderRecipe(panel, data);
             } catch (e) {
@@ -482,7 +566,7 @@
             if (loaded) { box.hidden = !box.hidden; btn.textContent = box.hidden ? "자세히 보기" : "접기"; return; }
             btn.disabled = true; btn.textContent = "불러오는 중…";
             try {
-              renderDetail(box, await api(`/api/food?sn=${encodeURIComponent(it.sn)}`));
+              renderDetail(box, await fetchFoodDetail(it.sn));
               loaded = true;
               btn.textContent = "접기";
             } catch (e) {
